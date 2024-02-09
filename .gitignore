@@ -1,0 +1,6 @@
+.env
+*json
+__pycache__/
+*.pyc
+token.pickle
+wk.txt
