@@ -1,8 +1,8 @@
 # Smart Auto Spend Tracker!
 
-## Introduction
+## Intro
 
-Hola! I'm thrilled to share a special project that made my life in Mexico simpler and more fun. Moving from Europe, I found myself juggling expenses across different currencies – day-to-day costs in MXN Peso, some in EURO, and subscriptions in Dollars. It was the perfect opportunity to blend some Python, Cloud, and power of AI to craft a auto-spending tracker.
+Hola! I'm thrilled to share this project that made my life in Mexico simpler and more fun. Moving from Europe, I found myself juggling expenses across different currencies – day-to-day costs in MXN Peso, some in EURO, and subscriptions in Dollars. It was the perfect opportunity to blend some Python, Cloud, and power of AI to craft a auto-spending tracker.
 
 ## Project Overview
 
