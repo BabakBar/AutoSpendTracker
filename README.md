@@ -1,23 +1,34 @@
-# AutoSpendTracker
+# Smart Auto Spend Tracker!
 
-Welcome to AutoSpendTracker, where we make managing your expenses not just easy, but a little bit fun too! Born out of the need to simplify the tedious task of tracking where your money is going, this tool is your personal finance buddy, keeping an eye on your transactions with Wise and PayPal.
+## Introduction
+
+Hola! I'm thrilled to share a special project that made my life in Mexico simpler and more fun. Moving from Europe, I found myself juggling expenses across different currencies – day-to-day costs in MXN Peso, some in EURO, and subscriptions in Dollars. It was the perfect opportunity to blend some Python, cloud, and power of AI to craft a auto-spending tracker.
+
+## Project Overview
+
+This is a tool I built to track, categorize, and monitor my spending from multiple accounts, starting with Wise & PayPal, which I use the most. It utilizes Google Vertex AI 'Gemini Pro' to process and analyze my transaction data.
+
+![Technical Workflow](/workflow.png)
+*The above diagram illustrates the technical workflow of my project.*
+
+## Features
+
+- **Multi-Currency Support:** Seamlessly handles MXN, EUR, and USD.
+- **Automated Tracking:** Integrates with email notifications for transaction alerts.
+- **Intelligent Categorization:** Leverages AI to categorize expenses.
+- **Google Sheets Integration:** Presents a neat summary of expenses with details.
+- **Open Source:** Shared with the community to inspire and innovate together.
 
 ## How It Works
 
-AutoSpendTracker is a nifty piece of software that automatically fetches transaction details from your email and neatly organizes them into a Google Sheet. It's like magic, but with code!
+1. **Transaction Notification:** Wise & PayPal send an email notification after each transaction.
+2. **Function Trigger:** The Gmail API listens for new emails and triggers a parsing function.
+3. **Data Enrichment:** Gemini Pro enriches the transaction data and categorizes the expense.
+4. **Google Sheets Update:** The final data is automatically updated in Google Sheets for easy tracking and analysis.
 
-### The Magic Behind the Curtain
+## Contact
 
-Here's a quick glance at how AutoSpendTracker performs its tricks:
+If you're curious about the project, want to contribute, or just say 'hola', feel free to reach out!
 
-1. **Email Fetching**: Our script sifts through your inbox, finding those pesky transaction emails.
-2. **Data Parsing**: Like a skilled magician, it then extracts the essential bits of information.
-3. **AI Integration**: With a sprinkle of AI, it classifies your transactions into categories.
-4. **Sheet Updating**: Finally, it appends the data to a Google Sheet, making your life a whole lot easier.
-
-### Built With Passion And:
-
-- Python 🐍: The language that brings our logic to life.
-- Google Sheets API 📊: Where all your transaction data finds a new home.
-- Vertex AI 🤖: The brain that understands your spending habits.
-- Gmail API 📧: The gateway to your transaction emails.
+- **Email:** [Email](babak.barghi@gmail.com)
+- **LinkedIn:** [LinkdeIn]([https://linkedin.com/in/yourusername](https://www.linkedin.com/in/babakbarghi/)https://www.linkedin.com/in/babakbarghi/)
