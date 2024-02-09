@@ -21,9 +21,10 @@ This is a tool I built to track, categorize, and monitor my spending from multip
 Rather than giving all bank credentials to other apps (it can be insecure), I set my banks to email me for a transaction above the minimum limit!
 
 2. **Function Trigger:** The Gmail API listens for new emails and triggers a parsing function.
-3. **Prompting Gemini Pro:** The prompt is where magic happens. Prompting lets you ask AI to accomplish a task. For this project that magic is turning any transaction details into useful data. For my use case where PayPal emails are in German and Wise in English, I had to prompt the chatbot about this. So i went through some iterations for the prompt. It's been constant improvement but still has room to grow. I actually keep track the old prompts in my local code because it's fun to see it evolve.
+3. **Prompting Gemini Pro:** The prompt is where magic happens! For this project that beauty is in turning any transaction details into useful data. For my use case, PayPal emails are in German, and Wise is in English, so I had to configure the model about this. So I went through several iterations for the prompt. But it still keeps growing. I have actually been keeping the old prompts in my local code just for fun seeing this thing evolve.
 
-I've found it's good to give a sample output of what I'd like the JSON to look like and then explain the details of the schema. It's remarkable that with just a few sentences and one example, Gemini is able to understand my intention for it and the specific structure of output I'm looking for. At the end Gemini Pro enriches the transaction data and categorizes the expense and we get a parsed transaction data like: 
+I could give some sample output of what I would like the JSON to resemble, and then explain the details of the schema. It is amazing how just a few sentences and one example of what I wanted was enough for Gemini to understand my intention toward it and my expectations of the structure of the output. Finally, Gemini Pro enriches the transaction data and gives a category to the expenditure, and we get something like parsed transaction data:
+```
 {
 'amount': '335', 
 'currency': 'MXN', 
@@ -33,16 +34,16 @@ I've found it's good to give a sample output of what I'd like the JSON to look l
 'time': '20:25 PM', 
 'account': 'Wise'
 }
-
+```
 This is remarkable to have nice formatted info of all the details. 
 
-4. **Google Sheets Update:** I included an app script for the google sheet (can be activated from extensions in sheets) to make a custom font/size of new entries.  The final data is automatically updated in Google Sheets for easy tracking and analysis.
+4. **Google Sheets Update:** The sheet.gs file attached is the app script for the Google sheet (it can be enabled from extensions in sheets) to apply a custom font/size for new entries. The ultimate data is automatically updated in Google Sheets for easy tracking and analysis.
 
 ## Features
 
-- **Multi-Currency Support:** Seamlessly handles MXN, EUR, and USD.
+- **Multi-Currency/Language Support:** Seamlessly handles MXN, EUR, USD / English, German.
 - **Automated Tracking:** Integrates with email notifications for transaction alerts.
-- **Intelligent Categorization:** Leverages AI to categorize expenses.
+- **Intelligent Categorization:** Leverages AI to categorize & structure expenses.
 - **Google Sheets Integration:** Presents a neat summary of expenses with details.
 - **Open Source:** Shared with the community to inspire and innovate together.
 
