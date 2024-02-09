@@ -55,5 +55,5 @@ This is remarkable to have nice formatted info of all the details.
 
 This took me 3 weekends to figure out and setup, hopefully with this code you can make it work in even less time! If you're curious about the project, want to contribute, or just say 'hola', feel free to reach out!
 
-- **Email:** [[Email](babak.barghi@gmail.com)]
+- **Email:** [[Email](mailto:babak.barghi@gmail.com)]
 - **LinkedIn:** [[LinkdeIn](https://www.linkedin.com/in/babakbarghi/)]
