@@ -79,7 +79,6 @@ def prompt_vertex(api_endpoint, credentials, prompt):
 
     return relevant_response
 
-# Main execution
 if __name__ == '__main__':
     service = gmail_authenticate()
     credentials = service_account.Credentials.from_service_account_file(
@@ -100,13 +99,13 @@ if __name__ == '__main__':
                 
                 if model_response:
                     # Process each part of the model_response
-                    complete_response = ''.join(model_response)  # Assuming model_response is a list of strings
+                    complete_response = ''.join(model_response)  # model_response is a list of strings
                     try:
-                        # Attempt to parse the concatenated response string as JSON
+                        # parse the concatenated response string as JSON
                         transaction_data = json.loads(complete_response)
                         print("Parsed transaction data:", transaction_data)
                         
-                        # Here we add the parsed transaction data to the list for sheet appending
+                        # add the parsed transaction data to list for sheet appending
                         sheet_data.append([
                             transaction_data.get('date', ''),
                             transaction_data.get('time', ''),
