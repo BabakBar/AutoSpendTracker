@@ -2,11 +2,11 @@
 
 ## Intro
 
-Hola! I'm thrilled to share this project that made my life in Mexico simpler and more fun. Moving from Europe, I found myself juggling expenses across different currencies – day-to-day costs in MXN Peso, some in EURO, and subscriptions in Dollars. It was the perfect opportunity to blend some Python, Cloud, and power of AI to craft a auto-spending tracker.
+happy to share this project that made my life in Mexico simpler and more fun. moving from europe, i found myself spending across different currencies – day-to-day costs in MXN Peso, some in EURO, and subscriptions in Dollars. It was a nice opportunity to blend some Python, Cloud, and power of AI to craft a auto-spending tracker.
 
 ## Project Overview
 
-This is a tool I built to track, categorize, and monitor my spending from multiple accounts, starting with Wise & PayPal, which I use the most. It utilizes Google Vertex AI 'Gemini Pro' to process and analyze my transaction data.
+This is a tool i built to track, categorize, and monitor my spending from multiple accounts, starting with Wise & PayPal, which I use the most. It utilizes Google Vertex AI 'Gemini Pro' to process and analyze my transaction data.
 
 *Overall, this is how the entire project works.*
 
