@@ -45,11 +45,79 @@ I could give some sample output of what I would like the JSON to resemble, and t
 'account': 'Wise'
 }
 ```
-This is remarkable to have nice formatted info of all the details. 
 
-4. **Google Sheets Update:** The sheet.gs file attached is the app script for the Google sheet (it can be enabled from extensions in sheets) to apply a custom font/size for new entries. The ultimate data is automatically updated in Google Sheets for easy tracking and analysis.
+## Setup Instructions
 
+### Prerequisites
+1. Python 3.7 or higher
+2. Google Cloud Account
+3. Gmail Account
+4. Google Sheets Account
 
+### Step 1: Google Cloud Setup
+1. Create a new project in Google Cloud Console
+2. Enable the following APIs:
+   - Gmail API
+   - Google Sheets API
+   - Vertex AI API
+3. Create a Service Account and download the JSON key
+4. Create OAuth 2.0 credentials and download as `credentials.json`
+
+### Step 2: Environment Setup
+1. Clone the repository
+2. Install dependencies:
+```bash
+pip install -r requirements.txt
+```
+3. Create a `.env` file with the following variables:
+```
+API_ENDPOINT=your_vertex_ai_endpoint
+SERVICE_ACCOUNT_FILE=path_to_service_account.json
+PROJECT_ID=your_google_cloud_project_id
+LOCATION=your_google_cloud_location
+SPREADSHEET_ID=your_google_sheet_id
+```
+
+### Step 3: Google Sheets Setup
+1. Create a new Google Sheet
+2. Share it with the service account email
+3. Copy the Spreadsheet ID from the URL
+4. Add the sheet.gs script from Extensions > Apps Script
+
+### Step 4: Email Setup
+1. Configure your Wise account to send transaction notifications
+2. Configure your PayPal account to send transaction notifications
+3. Run the initial authentication:
+```bash
+python gmail_auth.py
+```
+
+## Usage
+
+1. Start the tracker:
+```bash
+python api.py
+```
+
+2. The script will:
+   - Monitor for new transaction emails
+   - Parse transaction details
+   - Use AI to categorize transactions
+   - Update your Google Sheet automatically
+
+## Error Handling
+
+The system includes error handling for:
+- API failures
+- Email parsing issues
+- Network connectivity problems
+- Authentication errors
+
+If you encounter any issues:
+1. Check the logs
+2. Verify your credentials
+3. Ensure all APIs are enabled
+4. Confirm environment variables are set correctly
 
 ## Contact
 
