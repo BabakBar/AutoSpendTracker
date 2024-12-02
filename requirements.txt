@@ -1,6 +1,8 @@
 google-auth-oauthlib>=1.0.0
 google-auth-httplib2>=0.1.0
 google-api-python-client>=2.0.0
+google-cloud-aiplatform>=1.64.0
 beautifulsoup4>=4.9.0
 python-dotenv>=0.19.0
 requests>=2.25.0
+tenacity>=8.0.0
