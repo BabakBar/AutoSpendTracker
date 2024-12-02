@@ -2,11 +2,11 @@
 
 ## Intro
 
-Hola! I'm thrilled to share this project that made my life in Mexico simpler and more fun. Moving from Europe, I found myself juggling expenses across different currencies – day-to-day costs in MXN Peso, some in EURO, and subscriptions in Dollars. It was the perfect opportunity to blend some Python, Cloud, and power of AI to craft a auto-spending tracker.
+happy to share this project that made my life in Mexico simpler and more fun. moving from europe, i found myself spending across different currencies – day-to-day costs in MXN Peso, some in EURO, and subscriptions in Dollars. It was a nice opportunity to blend some Python, Cloud, and power of AI to craft a auto-spending tracker.
 
 ## Project Overview
 
-This is a tool I built to track, categorize, and monitor my spending from multiple accounts, starting with Wise & PayPal, which I use the most. It utilizes Google Vertex AI 'Gemini Pro' to process and analyze my transaction data.
+This is a tool i built to track, categorize, and monitor my spending from multiple accounts, starting with Wise & PayPal, which I use the most. It utilizes Google Vertex AI 'Gemini Pro' to process and analyze my transaction data.
 
 *Overall, this is how the entire project works.*
 
@@ -28,10 +28,10 @@ This is a tool I built to track, categorize, and monitor my spending from multip
 
 ![Output](/images/Output.png)
 
-Rather than giving all bank credentials to other apps (it can be insecure), I set my banks to email me for a transaction above the minimum limit!
+Rather than giving all bank credentials to other apps, I set my banks to email me for a transaction above the minimum limit!
 
 2. **Function Trigger:** The Gmail API listens for new emails and triggers a parsing function.
-3. **Prompting Gemini Pro:** The prompt is where magic happens! For this project that beauty is in turning any transaction details into useful data. For my use case, PayPal emails are in German, and Wise is in English, so I had to configure the model about this. So I went through several iterations for the prompt. But it still keeps growing. I have actually been keeping the old prompts in my local code just for fun seeing this thing evolve.
+3. **Prompting Gemini Pro:** The prompt is where magic happens! For this project that beauty is in turning any transaction details into useful data. For my use case, PayPal emails are in German, and Wise is in English, so I had to configure the model about this. So I went through several iterations for the prompt. But it still keeps growing.
 
 I could give some sample output of what I would like the JSON to resemble, and then explain the details of the schema. It is amazing how just a few sentences and one example of what I wanted was enough for Gemini to understand my intention toward it and my expectations of the structure of the output. Finally, Gemini Pro enriches the transaction data and gives a category to the expenditure, and we get something like parsed transaction data:
 ```
