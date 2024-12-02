@@ -1,7 +1,56 @@
+# Sensitive files
 .env
-.venv
-*json
-__pycache__/
-*.pyc
+*.json
+!package.json
 token.pickle
+credentials/
+secrets/
+SECURITY.md
+
+# Logs
+logs/
+*.log
+*.log.*
 wk.txt
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project specific
+transaction_data.json
+test_data/
+temp/
