@@ -54,3 +54,4 @@ Thumbs.db
 transaction_data.json
 test_data/
 temp/
+autospendtracker.env
