@@ -2,7 +2,9 @@
 
 This guide outlines steps to modernize the AutoSpendTracker project, enhancing its structure, security, maintainability, and leveraging modern Python tooling.
 
-## 1. Dependency Management with UV & `pyproject.toml`
+## 1. Dependency Management with UV & `pyproject.toml` [COMPLETED]
+
+Dependencies have been migrated to `pyproject.toml` and are managed using `uv`.
 
 Migrate from `requirements.txt` to `pyproject.toml` managed by `uv` for faster and more unified dependency management and project tooling configuration.
 
@@ -72,7 +74,9 @@ Migrate from `requirements.txt` to `pyproject.toml` managed by `uv` for faster a
 
     *(The `-e .` installs the project in editable mode, necessary if using a `src` layout)*
 
-## 2. Project Structure Refactoring
+## 2. Project Structure Refactoring [COMPLETED]
+
+The project has been restructured to use the `src` layout. Source code now resides in `src/autospendtracker`.
 
 Adopt a standard `src` layout for better organization and clarity.
 
@@ -113,61 +117,12 @@ AutoSpendTracker/
 **Steps:**
 
 1. Create the `src/autospendtracker/` directory.
-2. Move `.py` files (`api.py`, `fetch_mails.py`, `gmail_auth.py`, `sheets_integration.py`) into `src/autospendtracker/`.
-3. Rename files for clarity (e.g., `fetch_mails.py` -> `email_parser.py`, `gmail_auth.py` -> `google_auth.py`, `sheets_integration.py` -> `sheets.py`).
+2. **[COMPLETED]** Moved `.py` files (`api.py`, `fetch_mails.py`, `gmail_auth.py`, `sheets_integration.py`) into `src/autospendtracker/`.
+3. **[COMPLETED]** Renamed files: `fetch_mails.py` -> `email_parser.py`, `gmail_auth.py` -> `google_auth.py`, `sheets_integration.py` -> `sheets.py`. (`api.py` remains `api.py` but moved).
 4. Create `src/autospendtracker/__init__.py`.
-5. Create a new `src/autospendtracker/main.py` to act as the main entry point, importing and orchestrating calls to the other modules. Refactor the `if __name__ == '__main__':` block from the old `api.py` into this file.
-6. Update all relative imports within the moved Python files to reflect the new structure (e.g., `from .email_parser import parse_email`).
+5. **[COMPLETED]** Created `src/autospendtracker/main.py` as the main entry point, orchestrating calls to other modules. The `if __name__ == '__main__':` logic from the old root-level scripts was consolidated here.
+6. **[COMPLETED]** Updated all relative imports within the moved Python files to use the `src/autospendtracker` package structure (e.g., `from .email_parser import parse_email`).
 7. Create the `tests/` directory for future tests.
-
-## 3. Security Enhancements (Implement `SECURITY.md`)
-
-Address the security concerns identified in [`SECURITY.md`](d:\Tools\GitHub\AutoSpendTracker\SECURITY.md).
-
-**Key Actions:**
-
-1. **Credential Management (High Priority):**
-    * **Use Google Secret Manager:** Store `PROJECT_ID`, `LOCATION`, `SPREADSHEET_ID`, `SERVICE_ACCOUNT_FILE` content (or path if absolutely necessary, but prefer content), and `credentials.json` content in Secret Manager.
-    * **Update Code:** Modify the application (potentially in a new `config.py`) to fetch these secrets at runtime using the `google-cloud-secret-manager` library. Grant the runtime environment (e.g., the service account used by Vertex AI/Sheets, or the user running the script locally) permission to access these secrets.
-    * **Remove from `.env`:** Remove sensitive values from `.env` and `.env.example`, leaving only non-sensitive configuration or references to Secret Manager secret IDs.
-    * **Secure `token.pickle`:** Ensure this file has appropriate file permissions if stored locally, or consider alternative token storage mechanisms if running in a shared environment.
-    * **Add `google-cloud-secret-manager` to `pyproject.toml`**.
-
-    ````python
-    # filepath: src/autospendtracker/config.py (Conceptual)
-    from google.cloud import secretmanager
-    import os
-    import json
-
-    def get_secret(secret_id: str, project_id: str) -> str:
-        client = secretmanager.SecretManagerServiceClient()
-        name = f"projects/{project_id}/secrets/{secret_id}/versions/latest"
-        response = client.access_secret_version(request={"name": name})
-        return response.payload.data.decode("UTF-8")
-
-    # Example usage:
-    PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT") # Standard env var often set by gcloud
-    # SPREADSHEET_ID = get_secret("spreadsheet-id-secret-name", PROJECT_ID)
-    # SERVICE_ACCOUNT_INFO_JSON = get_secret("service-account-key-secret-name", PROJECT_ID)
-    # service_account_info = json.loads(SERVICE_ACCOUNT_INFO_JSON)
-    # credentials = service_account.Credentials.from_service_account_info(service_account_info, ...)
-    ````
-
-2. **Least Privilege:**
-    * **Review Scopes:** In `google_auth.py` and `sheets.py` (and Vertex AI initialization), ensure you are requesting the *minimum necessary* scopes. Avoid broad scopes like `cloud-platform`.
-        * Gmail: `https://www.googleapis.com/auth/gmail.readonly` (if not modifying labels/messages).
-        * Sheets: `https://www.googleapis.com/auth/spreadsheets` (if appending).
-        * Vertex AI: Scope needed for prediction.
-    * **Service Account Roles:** Ensure the `ASTservice.json` service account has only the necessary IAM roles (e.g., `Vertex AI User`, `Sheets Editor`, `Secret Manager Secret Accessor`).
-
-3. **Data Security:**
-    * **Eliminate `transaction_data.json`:** Modify the workflow (see Section 7) to append data directly to Sheets after processing, removing the need for this intermediate, unencrypted file.
-    * **If `transaction_data.json` is kept:** Encrypt its contents using the `cryptography` library before writing and decrypt after reading. Store the encryption key securely (e.g., in Secret Manager). Add `cryptography` to `pyproject.toml`.
-
-4. **Secure Logging:**
-    * **Implement Rotating Logs:** Use `logging.handlers.RotatingFileHandler` for log rotation.
-    * **Mask Sensitive Data:** Ensure PII or sensitive transaction details are not logged in plain text. Filter or mask them before logging.
-    * **Cloud Logging:** Consider integrating with Google Cloud Logging for centralized monitoring.
 
 ## 4. Modernizing AI Interaction
 
@@ -175,7 +130,7 @@ Improve the robustness and reliability of the interaction with the Vertex AI Gem
 
 **Steps:**
 
-1. **Refine Prompt Engineering (`api.py` -> `create_prompt`):**
+1. **Refine Prompt Engineering (`src/autospendtracker/api.py` -> `create_prompt`):**
     * **Clarity & Specificity:** Ensure instructions are unambiguous.
     * **Few-Shot Examples (Optional):** Include 1-2 examples of input text and desired JSON output directly within the prompt to guide the model better.
     * **JSON Schema Definition:** Consider providing a JSON schema definition within the prompt to reinforce the structure.
@@ -224,10 +179,10 @@ Improve the robustness and reliability of the interaction with the Vertex AI Gem
             return v.upper()
     ````
 
-    * Update `process_transaction` in `api.py` to use this model:
+    * Update `process_transaction` in `src/autospendtracker/api.py` to use this model:
 
     ````python
-    # filepath: src/autospendtracker/api.py
+    # filepath: src/autospendtracker/api.py (Updated Usage)
     # ... other imports ...
     from .models import Transaction # Assuming models.py is in the same directory
 
@@ -298,7 +253,7 @@ Integrate standard Python development tools.
     * Run linting: `uv run ruff check . --fix`
 2. **Type Checking (Mypy):**
     * Add `mypy` to `[project.optional-dependencies].dev`.
-    * Ensure type hints are present and accurate throughout the codebase (`api.py`, `email_parser.py`, etc.).
+    * Ensure type hints are present and accurate throughout the codebase (`src/autospendtracker/api.py`, `src/autospendtracker/email_parser.py`, `src/autospendtracker/main.py`, etc.).
     * Configure `mypy` in `pyproject.toml`:
 
         ````toml
@@ -329,14 +284,14 @@ Combine the email processing and Sheets upload into a single, streamlined workfl
 
 **Steps:**
 
-1. **Refactor `sheets.py`:** Remove the `if __name__ == '__main__':` block and ensure `append_to_sheet` is easily importable and callable.
-2. **Modify `main.py`:**
-    * Import `append_to_sheet` from `.sheets`.
+1. **Refactor `src/autospendtracker/sheets.py`:** Remove the `if __name__ == '__main__':` block and ensure `append_to_sheet` is easily importable and callable. (Note: Sheets integration is currently commented out in `main.py`).
+2. **Modify `src/autospendtracker/main.py`:**
+    * Import `append_to_sheet` from `.sheets` (if uncommenting Sheets integration).
     * After the loop processing emails and collecting `sheet_data`, directly call `append_to_sheet` if `sheet_data` is not empty.
-    * Remove the code that writes to `transaction_data.json`.
+    * The code in `main.py` currently saves data to `transaction_data.json` in the project root. The step to append directly to Sheets and remove this file is **not yet completed**.
 
     ````python
-    # filepath: src/autospendtracker/main.py (Conceptual)
+    # filepath: src/autospendtracker/main.py (Conceptual - Reflects Integrated Workflow)
     import logging
     # ... other necessary imports ...
     from .google_auth import gmail_authenticate # Example import
@@ -396,9 +351,9 @@ Update [`README.md`](d:\Tools\GitHub\AutoSpendTracker\README.md) and [`docs/tech
 
 * The new project structure.
 * The use of `uv` and `pyproject.toml`.
-* The integrated workflow (no separate `sheets_integration.py` execution).
+* The integrated workflow in `src/autospendtracker/main.py` (no separate script execution, though Sheets integration is currently optional/commented out).
 * The security enhancements (especially the use of Secret Manager).
-* Instructions for running the code using the new entry point (`python -m src.autospendtracker.main` or configure a project script).
+* Instructions for running the code using the new entry point: `python -m autospendtracker.main` (from the project root).
 
 ## Conclusion
 

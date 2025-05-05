@@ -1,0 +1,38 @@
+# filepath: pyproject.toml
+[project]
+name = "autospendtracker"
+version = "1.0.0" # Or your desired starting version
+description = "Automated expense tracking using Gmail and Vertex AI."
+requires-python = ">=3.13"
+dependencies = [
+    "google-auth-oauthlib>=1.0.0",
+    "google-auth-httplib2>=0.1.0",
+    "google-api-python-client>=2.0.0",
+    "google-cloud-aiplatform>=1.64.0", # Check for latest compatible version
+    "beautifulsoup4>=4.9.0",
+    "python-dotenv>=0.19.0",
+    "requests>=2.25.0", # Often a transitive dependency, but good to list if used directly
+    "tenacity>=8.0.0",
+    # Add security dependencies later:
+    # "google-cloud-secret-manager>=2.0.0",
+    # "cryptography>=3.4.7",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff", # For linting and formatting
+    "mypy", # For type checking
+    "pytest", # For testing
+]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.ruff.lint.isort]
+known-first-party = ["autospendtracker"]
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true

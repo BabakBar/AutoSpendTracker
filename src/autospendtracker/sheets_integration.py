@@ -29,8 +29,3 @@ def append_to_sheet(spreadsheet_id, range_name, values):
         spreadsheetId=spreadsheet_id, range=range_name,
         valueInputOption='USER_ENTERED', body=body).execute()
     print('{0} cells appended.'.format(result.get('updates').get('updatedCells')))
-
-if __name__ == '__main__':
-    with open('transaction_data.json', 'r') as f:
-        sheet_data = json.load(f)
-    append_to_sheet(SPREADSHEET_ID, RANGE_NAME, sheet_data)

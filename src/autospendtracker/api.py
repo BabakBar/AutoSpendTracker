@@ -8,8 +8,8 @@ from dotenv import load_dotenv
 import vertexai
 from vertexai.generative_models import GenerativeModel
 from google.oauth2 import service_account
-from fetch_mails import search_messages, parse_email
-from gmail_auth import gmail_authenticate
+from .email_parser import search_messages, parse_email # Relative import
+from .google_auth import gmail_authenticate # Relative import
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 # Set up logging
@@ -227,45 +227,3 @@ def process_transaction(model: GenerativeModel, transaction_info: Dict[str, Any]
         logger.debug(f"Raw response: {model_response}")
         logger.debug(f"Cleaned response: {cleaned_response}")
         return None
-
-if __name__ == '__main__':
-    try:
-        # Load credentials from the service account file
-        credentials = service_account.Credentials.from_service_account_file(
-            SERVICE_ACCOUNT_FILE,
-            scopes=['https://www.googleapis.com/auth/cloud-platform']
-        )
-        
-        # Initialize Vertex AI with credentials
-        vertexai.init(project=PROJECT_ID, location=LOCATION, credentials=credentials)
-        
-        # Initialize the Gemini model
-        model = GenerativeModel("gemini-1.5-flash-002")
-        
-        # Initialize Gmail service
-        service = gmail_authenticate()
-        
-        sheet_data = []
-        messages = search_messages(service)
-        
-        if messages:
-            for msg in messages:
-                transaction_info = parse_email(service, 'me', msg['id'])
-                logger.info(f"Processing transaction: {transaction_info}")
-                
-                result = process_transaction(model, transaction_info)
-                if result:
-                    sheet_data.append(result)
-        else:
-            logger.info("No messages found")
-        
-        # Save the transaction data
-        if sheet_data:
-            with open('transaction_data.json', 'w') as f:
-                json.dump(sheet_data, f, indent=2)
-            logger.info(f"Saved {len(sheet_data)} transactions to transaction_data.json")
-        else:
-            logger.warning("No transactions were processed successfully")
-            
-    except Exception as e:
-        logger.error(f"Error during execution: {str(e)}", exc_info=True)
