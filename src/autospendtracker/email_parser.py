@@ -156,3 +156,21 @@ def parse_email(service, user_id: str, msg_id: str) -> Dict[str, Optional[str]]:
         logger.error(f"Error parsing email: {e}")
 
     return transaction_details
+
+# Remove the main execution block as it's handled by main.py
+# if __name__ == '__main__':
+#     try:
+#         service = gmail_authenticate()
+#         messages = search_messages(service)
+#         
+#         if messages:
+#             for msg in messages:
+#                 transaction_info = parse_email(service, 'me', msg['id'])
+#                 if transaction_info['info']:
+#                     logger.info(f"Transaction found: {transaction_info}")
+#                 else:
+#                     logger.warning("Transaction details not found")
+#         else:
+#             logger.info("No messages found")
+#     except Exception as e:
+#         logger.error(f"Error in main execution: {e}", exc_info=True)
