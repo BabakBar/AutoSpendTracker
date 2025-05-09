@@ -41,3 +41,4 @@ wk.txt
 # UV tool
 .uv/
 uv.lock
+docs/modernize.md
