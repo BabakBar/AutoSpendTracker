@@ -1,56 +1,43 @@
-# Sensitive files
-.env
-*.json
-!package.json
-token.pickle
-credentials/
-secrets/
-SECURITY.md
-
-# Logs
-logs/
-*.log
-*.log.*
-wk.txt
-
-# Python
+# Python compiled files
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
-.venv/
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# Virtual environments
+.env
+.venv
+env/
 venv/
 ENV/
-env/
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
 
-# IDE
+# IDE files
 .idea/
 .vscode/
-*.swp
-*.swo
-*~
+*.sublime-project
+*.sublime-workspace
 
-# OS
-.DS_Store
-Thumbs.db
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
 
 # Project specific
+token.pickle
+credentials.json
+ASTservice.json
 transaction_data.json
-test_data/
-temp/
+*.log
+
+# wk.txt seems to be a temporary work file, exclude it
+wk.txt
+
+# UV tool
+.uv/
+uv.lock
