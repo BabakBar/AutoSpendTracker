@@ -28,6 +28,10 @@ if __name__ == "__main__":
         # Import the main module from the package
         from autospendtracker.main import main as run_main_application
         
+        # Set up Unicode-compatible logging
+        from autospendtracker.utils import configure_unicode_logging
+        configure_unicode_logging()
+        
         # Run the application's main function
         run_main_application()
         

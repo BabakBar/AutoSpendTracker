@@ -7,6 +7,7 @@ import logging
 import functools
 import traceback
 import sys
+import io
 from typing import Callable, TypeVar, Any, Optional, Dict
 
 # Set up logging
@@ -14,6 +15,29 @@ logger = logging.getLogger(__name__)
 
 # Type variable for the decorated function
 F = TypeVar('F', bound=Callable[..., Any])
+
+
+def configure_unicode_logging():
+    """
+    Configure logging handlers to properly handle Unicode characters.
+    
+    This solves issues with non-ASCII characters (like Turkish, Chinese, etc.)
+    in Windows console output which uses cp1252 encoding by default.
+    """
+    root_logger = logging.getLogger()
+    
+    # Remove any existing StreamHandlers to avoid duplication
+    handlers_to_remove = [h for h in root_logger.handlers if isinstance(h, logging.StreamHandler)]
+    for handler in handlers_to_remove:
+        root_logger.removeHandler(handler)
+    
+    # Add a new StreamHandler with proper Unicode handling
+    handler = logging.StreamHandler(stream=io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8'))
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    root_logger.addHandler(handler)
+    
+    logger.info("Configured logging for Unicode character handling")
 
 
 class AutoSpendTrackerError(Exception):

@@ -5,6 +5,8 @@ This module provides a centralized configuration for logging across the applicat
 
 import logging
 import os
+import sys
+import io
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
@@ -48,14 +50,18 @@ def setup_logging(
         file_handler = RotatingFileHandler(
             log_file, 
             maxBytes=10*1024*1024,  # 10MB
-            backupCount=3
+            backupCount=3,
+            encoding='utf-8'  # Ensure UTF-8 encoding for file logs
         )
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)
     
-    # Set up console logging
+    # Set up console logging with UTF-8 encoding
     if console:
-        console_handler = logging.StreamHandler()
+        # Use TextIOWrapper with UTF-8 encoding to handle international characters
+        console_handler = logging.StreamHandler(
+            stream=io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+        )
         console_handler.setFormatter(formatter)
         logger.addHandler(console_handler)
     
