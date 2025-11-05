@@ -58,10 +58,15 @@ def setup_logging(
     
     # Set up console logging with UTF-8 encoding
     if console:
-        # Use TextIOWrapper with UTF-8 encoding to handle international characters
-        console_handler = logging.StreamHandler(
-            stream=io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
-        )
+        # Try to reconfigure stdout for UTF-8 if possible (Python 3.7+)
+        try:
+            if hasattr(sys.stdout, 'reconfigure'):
+                sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+        except (AttributeError, OSError):
+            pass  # Not critical if this fails
+
+        # Use regular StreamHandler - sys.stdout should now handle UTF-8
+        console_handler = logging.StreamHandler(stream=sys.stdout)
         console_handler.setFormatter(formatter)
         logger.addHandler(console_handler)
     
