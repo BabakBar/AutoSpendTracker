@@ -10,11 +10,23 @@ import sys
 import io
 from typing import Callable, TypeVar, Any, Optional, Dict
 
+# Import exceptions from the centralized exceptions module
+from autospendtracker.exceptions import (
+    AutoSpendTrackerError,
+    ConfigurationError,
+    AIModelError,
+    TransactionValidationError
+)
+
 # Set up logging
 logger = logging.getLogger(__name__)
 
 # Type variable for the decorated function
 F = TypeVar('F', bound=Callable[..., Any])
+
+# Re-export exceptions for backward compatibility
+APIError = AIModelError
+DataValidationError = TransactionValidationError
 
 
 def configure_unicode_logging():
@@ -38,26 +50,6 @@ def configure_unicode_logging():
     root_logger.addHandler(handler)
     
     logger.info("Configured logging for Unicode character handling")
-
-
-class AutoSpendTrackerError(Exception):
-    """Base exception for all AutoSpendTracker-specific errors."""
-    pass
-
-
-class ConfigurationError(AutoSpendTrackerError):
-    """Exception raised for configuration errors."""
-    pass
-
-
-class APIError(AutoSpendTrackerError):
-    """Exception raised for API-related errors."""
-    pass
-
-
-class DataValidationError(AutoSpendTrackerError):
-    """Exception raised for data validation errors."""
-    pass
 
 
 def handle_exceptions(
