@@ -134,6 +134,10 @@ AutoSpendTracker/
 - **Robust Error Handling:** Comprehensive exception handling with detailed logging
 - **Production Ready:** Setup validation, diagnostic tools, and comprehensive documentation
 
+*How the output looks like*
+
+![output](/images/Output.png)
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request or open an Issue.
