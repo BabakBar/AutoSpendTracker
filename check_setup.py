@@ -95,19 +95,20 @@ def check_dependencies():
     print("Checking Python Dependencies...")
     print("=" * 60)
 
-    required_packages = [
-        "google-genai",
-        "google-api-python-client",
-        "google-auth-oauthlib",
-        "beautifulsoup4",
-        "python-dotenv",
-        "pydantic"
-    ]
+    # Map pip package names to their import names
+    required_packages = {
+        "google-genai": "google.genai",
+        "google-api-python-client": "googleapiclient",
+        "google-auth-oauthlib": "google_auth_oauthlib",
+        "beautifulsoup4": "bs4",
+        "python-dotenv": "dotenv",
+        "pydantic": "pydantic"
+    }
 
     missing = []
-    for package in required_packages:
+    for package, import_name in required_packages.items():
         try:
-            __import__(package.replace("-", "_"))
+            __import__(import_name)
             print(f"✓ {package}")
         except ImportError:
             print(f"✗ {package} not installed")
