@@ -31,6 +31,7 @@ DEFAULT_CONFIG = {
 
     # Email filtering settings
     "EMAIL_DAYS_BACK": "7",  # Number of days to look back for emails (default: 7 for weekly analysis)
+    "GMAIL_LABEL_NAME": "AutoSpendTracker/Processed",  # Label for marking processed emails
 
     # AI Model settings
     "MODEL_NAME": "gemini-2.5-flash",  # Latest Gemini model

@@ -18,6 +18,66 @@ from autospendtracker.config import CONFIG
 # Set up logging (uses centralized configuration from logging_config)
 logger = logging.getLogger(__name__)
 
+def get_or_create_label(service, label_name: str) -> Optional[str]:
+    """
+    Get the ID of a Gmail label, creating it if it doesn't exist.
+
+    Args:
+        service: Gmail API service instance
+        label_name: Name of the label to get or create
+
+    Returns:
+        Label ID if successful, None if error occurs
+    """
+    try:
+        # List all existing labels
+        results = service.users().labels().list(userId='me').execute()
+        labels = results.get('labels', [])
+
+        # Search for existing label
+        for label in labels:
+            if label['name'] == label_name:
+                logger.info(f"Found existing Gmail label: {label_name} (ID: {label['id']})")
+                return label['id']
+
+        # Label doesn't exist, create it
+        logger.info(f"Creating new Gmail label: {label_name}")
+        label_object = {
+            'name': label_name,
+            'labelListVisibility': 'labelShow',
+            'messageListVisibility': 'show'
+        }
+        created = service.users().labels().create(userId='me', body=label_object).execute()
+        logger.info(f"Created Gmail label: {label_name} (ID: {created['id']})")
+        return created['id']
+
+    except Exception as error:
+        logger.error(f"Error getting/creating label '{label_name}': {error}")
+        return None
+
+def add_label_to_message(service, msg_id: str, label_id: str) -> bool:
+    """
+    Add a label to a Gmail message.
+
+    Args:
+        service: Gmail API service instance
+        msg_id: Message ID to label
+        label_id: ID of the label to add
+
+    Returns:
+        True if successful, False if error occurs
+    """
+    try:
+        service.users().messages().modify(
+            userId='me',
+            id=msg_id,
+            body={'addLabelIds': [label_id]}
+        ).execute()
+        return True
+    except Exception as error:
+        logger.error(f"Error adding label to message {msg_id}: {error}")
+        return False
+
 def search_messages(service, user_id: str = 'me', days_back: Optional[int] = None) -> Optional[List[Dict[str, Any]]]:
     """
     Search for transaction emails from Wise and PayPal.
@@ -38,9 +98,13 @@ def search_messages(service, user_id: str = 'me', days_back: Optional[int] = Non
     search_date = datetime.now() - timedelta(days=days_back)
     date_str = search_date.strftime('%Y/%m/%d')
 
-    # Build query with date filter
+    # Get label name from config
+    label_name = CONFIG.get("GMAIL_LABEL_NAME", "AutoSpendTracker/Processed")
+
+    # Build query with date filter and exclude processed emails
     query = (
         f'after:{date_str} AND '
+        f'-label:{label_name} AND '
         '((from:noreply@wise.com ("You spent" OR "is now in")) OR '
         '(from:service@paypal.de "Von Ihnen gezahlt"))'
     )
