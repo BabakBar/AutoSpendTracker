@@ -15,6 +15,7 @@ from google.auth.transport.requests import Request
 
 from autospendtracker.security import get_credential_path
 from autospendtracker.exceptions import SheetsError, CredentialError, ConfigurationError
+from autospendtracker.utils import retry_api_call
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -58,6 +59,7 @@ def create_sheets_service(service_account_file: str = None):
         logger.error(f"Failed to create Sheets service: {e}")
         raise SheetsError(f"Failed to create Sheets service: {e}") from e
 
+@retry_api_call
 def append_to_sheet(
     values: List[List[Any]],
     spreadsheet_id: str = DEFAULT_SPREADSHEET_ID,
@@ -65,12 +67,12 @@ def append_to_sheet(
 ) -> Dict[str, Any]:
     """
     Append values to a Google Sheet.
-    
+
     Args:
         values: Data to append to the sheet (list of rows)
         spreadsheet_id: ID of the target spreadsheet
         range_name: Range where data should be appended
-        
+
     Returns:
         Result of the append operation
     """

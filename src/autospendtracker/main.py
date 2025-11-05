@@ -79,6 +79,16 @@ def process_emails() -> List[List[str]]:
     # Process each message with progress bar
     logger.info(f"Processing {len(messages)} emails...")
     for msg in tqdm(messages, desc="Processing emails", unit="email"):
+        # CRITICAL: Label email FIRST to prevent duplicate processing if crash occurs
+        # This fixes the race condition where crashes before labeling cause duplicates
+        if label_id:
+            labeled = add_label_to_message(service, msg['id'], label_id)
+            if not labeled:
+                logger.warning(f"Skipping {msg['id']} - failed to label (won't process to avoid duplicates)")
+                continue
+            logger.debug(f"Labeled email {msg['id']} as processed")
+
+        # Now safe to process - email is already marked
         transaction_info = parse_email(service, 'me', msg['id'])
         logger.debug(f"Processing transaction: {transaction_info}")
 
@@ -86,14 +96,6 @@ def process_emails() -> List[List[str]]:
         result = process_transaction(client, transaction_info)
         if result:
             sheet_data.append(result)
-
-            # Mark email as processed
-            if label_id:
-                labeled = add_label_to_message(service, msg['id'], label_id)
-                if labeled:
-                    logger.debug(f"Labeled email {msg['id']} as processed")
-                else:
-                    logger.warning(f"Failed to label email {msg['id']} - may be reprocessed next run")
 
     return sheet_data
 
