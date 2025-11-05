@@ -45,9 +45,13 @@ class Transaction(BaseModel):
 
     @field_validator('time')
     def validate_time_format(cls, v):
-        """Validate that the time is in HH:MM AM/PM format."""
-        if not re.match(r'^(0?[1-9]|1[0-2]):[0-5][0-9] [AP]M$', v):
-            raise ValueError('Invalid time format, expected HH:MM AM/PM')
+        """Validate that the time is in HH:MM AM/PM format.
+
+        Valid hours: 1-12 (not 0). Examples: "1:30 PM", "12:00 AM", "11:59 PM"
+        Invalid: "0:30 AM" (hour 0 doesn't exist in 12-hour format)
+        """
+        if not re.match(r'^(1[0-2]|[1-9]):[0-5][0-9] [AP]M$', v):
+            raise ValueError('Invalid time format, expected HH:MM AM/PM (hours 1-12)')
         return v
 
     @field_validator('currency')
