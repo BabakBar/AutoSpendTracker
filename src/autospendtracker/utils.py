@@ -10,6 +10,9 @@ import sys
 import io
 from typing import Callable, TypeVar, Any, Optional, Dict
 
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception
+from googleapiclient.errors import HttpError
+
 # Import exceptions from the centralized exceptions module
 from autospendtracker.exceptions import (
     AutoSpendTrackerError,
@@ -27,6 +30,47 @@ F = TypeVar('F', bound=Callable[..., Any])
 # Re-export exceptions for backward compatibility
 APIError = AIModelError
 DataValidationError = TransactionValidationError
+
+
+def _should_retry_http_error(exception: BaseException) -> bool:
+    """
+    Determine if an HTTP error should be retried.
+
+    Args:
+        exception: The exception to check
+
+    Returns:
+        True if the error should be retried, False otherwise
+    """
+    if isinstance(exception, HttpError):
+        # Retry on 5xx server errors and 429 rate limiting
+        return exception.resp.status >= 500 or exception.resp.status == 429
+    return False
+
+
+def retry_api_call(func: F) -> F:
+    """
+    Decorator to add retry logic to API calls.
+
+    Retries failed API calls up to 3 times with exponential backoff.
+    Only retries on server errors (5xx) and rate limiting (429).
+
+    Args:
+        func: Function to decorate
+
+    Returns:
+        Decorated function with retry logic
+    """
+    decorated = retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=4, max=10),
+        retry=retry_if_exception(_should_retry_http_error),
+        reraise=True,
+        before_sleep=lambda retry_state: logger.warning(
+            f"Retrying {func.__name__} after error (attempt {retry_state.attempt_number}/3)"
+        )
+    )(func)
+    return decorated  # type: ignore
 
 
 def configure_unicode_logging():

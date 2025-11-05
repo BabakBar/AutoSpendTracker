@@ -14,10 +14,12 @@ from bs4 import BeautifulSoup
 
 from autospendtracker.auth import gmail_authenticate
 from autospendtracker.config import CONFIG
+from autospendtracker.utils import retry_api_call
 
 # Set up logging (uses centralized configuration from logging_config)
 logger = logging.getLogger(__name__)
 
+@retry_api_call
 def get_or_create_label(service, label_name: str) -> Optional[str]:
     """
     Get the ID of a Gmail label, creating it if it doesn't exist.
@@ -55,6 +57,7 @@ def get_or_create_label(service, label_name: str) -> Optional[str]:
         logger.error(f"Error getting/creating label '{label_name}': {error}")
         return None
 
+@retry_api_call
 def add_label_to_message(service, msg_id: str, label_id: str) -> bool:
     """
     Add a label to a Gmail message.
@@ -78,6 +81,7 @@ def add_label_to_message(service, msg_id: str, label_id: str) -> bool:
         logger.error(f"Error adding label to message {msg_id}: {error}")
         return False
 
+@retry_api_call
 def search_messages(service, user_id: str = 'me', days_back: Optional[int] = None) -> Optional[List[Dict[str, Any]]]:
     """
     Search for transaction emails from Wise and PayPal.
@@ -110,23 +114,38 @@ def search_messages(service, user_id: str = 'me', days_back: Optional[int] = Non
     )
     try:
         logger.info(f"Searching for transaction emails from the last {days_back} days (since {date_str})")
-        response = service.users().messages().list(userId=user_id, q=query).execute()
-        messages = response.get('messages', [])
-        logger.info(f"Found {len(messages)} transaction emails")
-        return messages
+
+        # Implement pagination to fetch all messages (not just first 100)
+        all_messages = []
+        request = service.users().messages().list(userId=user_id, q=query, maxResults=100)
+
+        while request:
+            response = request.execute()
+            messages = response.get('messages', [])
+            all_messages.extend(messages)
+
+            # Get next page if available
+            request = service.users().messages().list_next(request, response)
+
+            if request:
+                logger.debug(f"Fetching next page of emails... ({len(all_messages)} so far)")
+
+        logger.info(f"Found {len(all_messages)} transaction emails across all pages")
+        return all_messages
     except Exception as error:
         logger.error(f'Error searching messages: {error}')
         return None
 
+@retry_api_call
 def get_email_body(service, user_id: str, msg_id: str) -> Optional[str]:
     """
     Get the HTML body of an email message.
-    
+
     Args:
         service: Gmail API service instance
         user_id: User's email address
         msg_id: Message ID
-        
+
     Returns:
         HTML content of the email or None if error occurs
     """
