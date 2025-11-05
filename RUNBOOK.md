@@ -61,64 +61,6 @@ pytest tests/ -v
 # Expected output: 38 passed
 ```
 
-### By Category
-
-```bash
-# Unit tests only (33 tests)
-pytest tests/test_*.py -v --ignore=tests/test_e2e.py
-
-# E2E tests only (5 tests)
-pytest tests/test_e2e.py -v
-
-# Specific module
-pytest tests/test_ai.py -v        # AI tests
-pytest tests/test_models.py -v    # Model validation tests
-pytest tests/test_sheets.py -v    # Sheets integration tests
-pytest tests/test_main.py -v      # Main orchestration tests
-```
-
-### With Coverage Report
-
-```bash
-# Run with coverage
-pytest tests/ --cov=autospendtracker --cov-report=term-missing
-
-# Generate HTML coverage report
-pytest tests/ --cov=autospendtracker --cov-report=html
-
-# Open HTML report
-open htmlcov/index.html  # macOS
-xdg-open htmlcov/index.html  # Linux
-```
-
-### Quick Test (No Verbose)
-
-```bash
-# Fast run without details
-pytest tests/ -q
-
-# Show only failures
-pytest tests/ --tb=short
-
-# Stop on first failure
-pytest tests/ -x
-```
-
-### Specific Test
-
-```bash
-# Run single test by name
-pytest tests/test_e2e.py::TestEndToEnd::test_complete_pipeline_success -v
-
-# Run all tests in a class
-pytest tests/test_ai.py::TestAI -v
-
-# Run tests matching pattern
-pytest tests/ -k "pipeline" -v
-```
-
----
-
 ## 🏃 Running the Application
 
 ### Standard Run
