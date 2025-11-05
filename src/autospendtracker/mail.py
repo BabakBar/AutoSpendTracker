@@ -227,7 +227,8 @@ def parse_email(service, user_id: str, msg_id: str) -> Dict[str, Optional[str]]:
             )
         
         if transaction_details['info']:
-            logger.info(f"Successfully parsed transaction: {transaction_details}")
+            # Use DEBUG level to avoid logging PII (transaction details contain sensitive financial data)
+            logger.debug(f"Parsed transaction for {transaction_details.get('account', 'unknown')} account")
         else:
             logger.warning("No transaction details found in email")
             

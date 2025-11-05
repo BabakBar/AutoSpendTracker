@@ -5,12 +5,12 @@ This module handles authentication with Gmail API using OAuth2.
 
 import logging
 import os
-import pickle
 from pathlib import Path
 from typing import List, Optional
 
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 
 from autospendtracker.security import get_credential_path, secure_token_path
@@ -31,12 +31,12 @@ def gmail_authenticate(
     scopes: Optional[List[str]] = None
 ):
     """Authenticate with Gmail API using OAuth2.
-    
+
     Args:
         credentials_path: Path to credentials.json file
-        token_path: Path to token.pickle file (will be created if doesn't exist)
+        token_path: Path to gmail-token.json file (will be created if doesn't exist)
         scopes: OAuth scopes to request (defaults to DEFAULT_SCOPES)
-        
+
     Returns:
         A Gmail API service object
     """
@@ -48,13 +48,13 @@ def gmail_authenticate(
         credentials_path = get_credential_path('credentials', 'credentials.json')
     
     if token_path is None:
-        token_path = secure_token_path('gmail_token.pickle')
-        
+        token_path = secure_token_path('gmail-token.json')
+
     creds = None
     # Load token file if it exists
-    if Path(token_path).exists():
-        with open(token_path, 'rb') as token:
-            creds = pickle.load(token)
+    token_file = Path(token_path)
+    if token_file.exists():
+        creds = Credentials.from_authorized_user_file(str(token_path), scopes)
 
     # If credentials are missing or invalid, refresh or get new ones
     if not creds or not creds.valid:
@@ -79,8 +79,9 @@ def gmail_authenticate(
             creds = flow.run_local_server(port=0)
             logger.info("OAuth credentials obtained successfully")
         # Save the credentials for the next run
-        with open(token_path, 'wb') as token:
-            pickle.dump(creds, token)
+        token_file = Path(token_path)
+        token_file.write_text(creds.to_json(), encoding='utf-8')
+        os.chmod(token_path, 0o600)  # Secure file permissions
         logger.info(f"Credentials saved to: {token_path}")
     
     return build('gmail', 'v1', credentials=creds)
