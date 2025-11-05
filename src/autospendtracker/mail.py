@@ -14,11 +14,7 @@ from bs4 import BeautifulSoup
 
 from autospendtracker.auth import gmail_authenticate
 
-# Set up logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
+# Set up logging (uses centralized configuration from logging_config)
 logger = logging.getLogger(__name__)
 
 def search_messages(service, user_id: str = 'me') -> Optional[List[Dict[str, Any]]]:

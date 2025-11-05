@@ -14,6 +14,7 @@ from google.oauth2 import service_account
 from google.auth.transport.requests import Request
 
 from autospendtracker.security import get_credential_path
+from autospendtracker.exceptions import SheetsError, CredentialError, ConfigurationError
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -50,9 +51,12 @@ def create_sheets_service(service_account_file: str = None):
         credentials.refresh(Request())
         service = build('sheets', 'v4', credentials=credentials)
         return service.spreadsheets()
+    except FileNotFoundError as e:
+        logger.error(f"Service account file not found: {e}")
+        raise CredentialError(f"Service account file not found: {e}") from e
     except Exception as e:
         logger.error(f"Failed to create Sheets service: {e}")
-        raise
+        raise SheetsError(f"Failed to create Sheets service: {e}") from e
 
 def append_to_sheet(
     values: List[List[Any]],
@@ -71,7 +75,7 @@ def append_to_sheet(
         Result of the append operation
     """
     if not spreadsheet_id:
-        raise ValueError("Spreadsheet ID is missing. Set SPREADSHEET_ID environment variable.")
+        raise ConfigurationError("Spreadsheet ID is missing. Set SPREADSHEET_ID environment variable.")
         
     try:
         service = create_sheets_service()
@@ -88,7 +92,7 @@ def append_to_sheet(
         return result
     except Exception as e:
         logger.error(f"Failed to append data to sheet: {e}")
-        raise
+        raise SheetsError(f"Failed to append data to sheet: {e}") from e
 
 
 def load_transaction_data(file_path: str = 'transaction_data.json') -> List[List[Any]]:
@@ -104,6 +108,12 @@ def load_transaction_data(file_path: str = 'transaction_data.json') -> List[List
     try:
         with open(file_path, 'r') as f:
             return json.load(f)
+    except FileNotFoundError as e:
+        logger.error(f"Transaction data file not found: {file_path}")
+        raise FileNotFoundError(f"Transaction data file not found: {file_path}") from e
+    except json.JSONDecodeError as e:
+        logger.error(f"Invalid JSON in transaction data file: {e}")
+        raise ValueError(f"Invalid JSON in transaction data file: {e}") from e
     except Exception as e:
         logger.error(f"Failed to load transaction data from {file_path}: {e}")
         raise
