@@ -19,6 +19,8 @@ from dotenv import load_dotenv
 
 from autospendtracker.security import get_credential_path
 from autospendtracker.models import Transaction, ALLOWED_CATEGORIES
+from autospendtracker.exceptions import AIModelError, CredentialError, ConfigurationError
+from autospendtracker.config.app_config import get_config_value
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -26,10 +28,10 @@ logger = logging.getLogger(__name__)
 # Load environment variables
 load_dotenv()
 
-# Environment variables with defaults
+# Environment variables - use config module for defaults
 PROJECT_ID = os.getenv('PROJECT_ID')
-LOCATION = os.getenv('LOCATION', 'us-central1')
-MODEL_NAME = os.getenv('MODEL_NAME', 'gemini-2.5-flash')
+LOCATION = os.getenv('LOCATION') or get_config_value('LOCATION', 'us-central1')
+MODEL_NAME = os.getenv('MODEL_NAME') or get_config_value('MODEL_NAME', 'gemini-2.5-flash')
 
 # Category hints for better classification
 CATEGORY_HINTS = {
@@ -64,7 +66,7 @@ def initialize_ai_model(
         Initialized Google Gen AI client
     """
     if not project_id:
-        raise ValueError("PROJECT_ID environment variable is required")
+        raise ConfigurationError("PROJECT_ID environment variable is required")
     
     # Add diagnostic logging
     logger.info(f"Initializing AI model with: project_id={project_id}, location={location}, model_name={model_name}")
@@ -95,9 +97,12 @@ def initialize_ai_model(
         
         logger.info(f"Successfully initialized Google Gen AI client with model_name={model_name}")
         return client
+    except FileNotFoundError as e:
+        logger.error(f"Service account file not found: {e}")
+        raise CredentialError(f"Service account file not found: {e}") from e
     except Exception as e:
         logger.error(f"Error initializing AI model: {e}")
-        raise
+        raise AIModelError(f"Failed to initialize AI model: {e}") from e
 
 
 def create_prompt(transaction_info: Dict[str, Any]) -> str:
@@ -208,7 +213,7 @@ def prompt_vertex(client: Any, prompt_text: str, model_name: str = MODEL_NAME) -
         return response.text if response.text else None
     except Exception as e:
         logger.error(f"Error getting model response: {str(e)}")
-        raise
+        raise AIModelError(f"Failed to get model response: {str(e)}") from e
 
 
 def process_transaction(client: Any, transaction_info: Dict[str, Any], model_name: str = MODEL_NAME) -> Optional[List[str]]:
