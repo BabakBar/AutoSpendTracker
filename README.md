@@ -10,7 +10,7 @@ This is a tool I built to track, categorize, and monitor my spending from multip
 
 *Overall, this is how the entire project works.*
 
-![Workflow](/images/Workflow.png)
+![Workflow](/images/workflow.png)
 
 ## Installation
 
