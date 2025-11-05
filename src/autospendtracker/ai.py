@@ -28,10 +28,7 @@ logger = logging.getLogger(__name__)
 # Load environment variables
 load_dotenv()
 
-# Environment variables - use config module for defaults
-PROJECT_ID = os.getenv('PROJECT_ID')
-LOCATION = os.getenv('LOCATION') or get_config_value('LOCATION', 'us-central1')
-MODEL_NAME = os.getenv('MODEL_NAME') or get_config_value('MODEL_NAME', 'gemini-2.5-flash')
+# Note: Config values are resolved at runtime (not import time) to support dynamic configuration
 
 # Category hints for better classification
 CATEGORY_HINTS = {
@@ -48,23 +45,31 @@ CATEGORY_HINTS = {
 
 
 def initialize_ai_model(
-    project_id: str = PROJECT_ID,
-    location: str = LOCATION,
+    project_id: str = None,
+    location: str = None,
     service_account_file: str = None,
-    model_name: str = MODEL_NAME
+    model_name: str = None
 ) -> Any:
     """
     Initialize the Google Gen AI client.
-    
+
     Args:
-        project_id: Google Cloud project ID
-        location: Google Cloud location
+        project_id: Google Cloud project ID (defaults to PROJECT_ID env var)
+        location: Google Cloud location (defaults to LOCATION env var or 'us-central1')
         service_account_file: Path to service account JSON file
-        model_name: Name of the model to use
-    
+        model_name: Name of the model to use (defaults to MODEL_NAME env var or 'gemini-2.5-flash')
+
     Returns:
         Initialized Google Gen AI client
     """
+    # Resolve config at runtime (not import time) for dynamic configuration support
+    if project_id is None:
+        project_id = os.getenv('PROJECT_ID')
+    if location is None:
+        location = os.getenv('LOCATION') or get_config_value('LOCATION', 'us-central1')
+    if model_name is None:
+        model_name = os.getenv('MODEL_NAME') or get_config_value('MODEL_NAME', 'gemini-2.5-flash')
+
     if not project_id:
         raise ConfigurationError("PROJECT_ID environment variable is required")
     
@@ -185,18 +190,21 @@ def clean_json_response(response: str) -> str:
 
 
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
-def prompt_vertex(client: Any, prompt_text: str, model_name: str = MODEL_NAME) -> Optional[str]:
+def prompt_vertex(client: Any, prompt_text: str, model_name: str = None) -> Optional[str]:
     """
     Sends a prompt to the Google Gen AI model with retry logic.
-    
+
     Args:
         client: Initialized Google Gen AI client
         prompt_text: The prompt to send
-        model_name: Name of the model to use
-        
+        model_name: Name of the model to use (defaults to MODEL_NAME env var or 'gemini-2.5-flash')
+
     Returns:
         Model's response text or None if failed
     """
+    # Resolve model_name at runtime if not provided
+    if model_name is None:
+        model_name = os.getenv('MODEL_NAME') or get_config_value('MODEL_NAME', 'gemini-2.5-flash')
     try:
         logger.info("Sending prompt to model")
         response = client.models.generate_content(
@@ -216,18 +224,21 @@ def prompt_vertex(client: Any, prompt_text: str, model_name: str = MODEL_NAME) -
         raise AIModelError(f"Failed to get model response: {str(e)}") from e
 
 
-def process_transaction(client: Any, transaction_info: Dict[str, Any], model_name: str = MODEL_NAME) -> Optional[List[str]]:
+def process_transaction(client: Any, transaction_info: Dict[str, Any], model_name: str = None) -> Optional[List[str]]:
     """
     Processes a single transaction through the AI model.
-    
+
     Args:
         client: Initialized Google Gen AI client
         transaction_info: Transaction details to process
-        model_name: Name of the model to use
-        
+        model_name: Name of the model to use (defaults to MODEL_NAME env var or 'gemini-2.5-flash')
+
     Returns:
         List of transaction data fields or None if processing failed
     """
+    # Resolve model_name at runtime if not provided
+    if model_name is None:
+        model_name = os.getenv('MODEL_NAME') or get_config_value('MODEL_NAME', 'gemini-2.5-flash')
     if not transaction_info.get('info'):
         logger.info("No transaction info found")
         return None

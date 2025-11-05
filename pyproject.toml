@@ -8,16 +8,18 @@ version = "1.0.0"
 description = "Automated expense tracking using Gmail and Vertex AI."
 requires-python = ">=3.11"
 dependencies = [
-    "google-auth-oauthlib>=1.0.0",
-    "google-auth-httplib2>=0.1.0",
-    "google-api-python-client>=2.0.0",
-    "google-cloud-aiplatform>=1.64.0",
-    "google-genai>=1.14.0",  # Added Google Gen AI SDK
-    "beautifulsoup4>=4.9.0",
-    "python-dotenv>=0.19.0",
-    "requests>=2.25.0",
-    "tenacity>=8.0.0",
-    "tqdm>=4.65.0",  # Progress bar for email processing
+    # Use ~= for compatible release (allows patch updates only, not minor/major)
+    # This ensures reproducible builds while allowing security patches
+    "google-auth-oauthlib~=1.2.0",
+    "google-auth-httplib2~=0.2.0",
+    "google-api-python-client~=2.147.0",
+    "google-cloud-aiplatform~=1.70.0",
+    "google-genai~=1.14.0",  # Google Gen AI SDK
+    "beautifulsoup4~=4.12.0",
+    "python-dotenv~=1.0.0",
+    "requests~=2.32.0",
+    "tenacity~=9.0.0",
+    "tqdm~=4.66.0",  # Progress bar for email processing
 ]
 
 [project.optional-dependencies]
