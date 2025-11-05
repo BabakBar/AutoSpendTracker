@@ -20,21 +20,17 @@ if __name__ == "__main__":
     try:
         # Use absolute import to directly specify the package path
         sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "src")))
-        
+
         # More detailed error logging for debugging
         logger.info(f"Python path: {sys.path}")
         logger.info(f"Looking for module in: {os.path.abspath(os.path.join(os.path.dirname(__file__), 'src'))}")
-        
+
         # Import the main module from the package
         from autospendtracker.main import main as run_main_application
-        
-        # Set up Unicode-compatible logging
-        from autospendtracker.utils import configure_unicode_logging
-        configure_unicode_logging()
-        
-        # Run the application's main function
+
+        # Run the application's main function (main() handles its own logging setup)
         run_main_application()
-        
+
         logger.info("AutoSpendTracker command line execution completed")
     except ImportError as e:
         # Provide more detailed error information

@@ -28,7 +28,10 @@ DEFAULT_CONFIG = {
     "LOG_LEVEL": "INFO",
     "OUTPUT_FILE": "transaction_data.json",
     "TOKEN_DIR": str(Path.home() / ".autospendtracker" / "secrets"),
-    
+
+    # Email filtering settings
+    "EMAIL_DAYS_BACK": "7",  # Number of days to look back for emails (default: 7 for weekly analysis)
+
     # AI Model settings
     "MODEL_NAME": "gemini-2.5-flash",  # Latest Gemini model
     "MODEL_TEMPERATURE": 0.1,

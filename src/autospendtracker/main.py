@@ -9,6 +9,8 @@ import os
 from pathlib import Path
 from typing import Dict, List, Optional, Any
 
+from tqdm import tqdm
+
 from autospendtracker.auth import gmail_authenticate
 from autospendtracker.mail import search_messages, parse_email
 from autospendtracker.ai import initialize_ai_model, process_transaction
@@ -64,11 +66,12 @@ def process_emails() -> List[List[str]]:
         logger.info("No transaction emails found")
         return sheet_data
         
-    # Process each message
-    for msg in messages:
+    # Process each message with progress bar
+    logger.info(f"Processing {len(messages)} emails...")
+    for msg in tqdm(messages, desc="Processing emails", unit="email"):
         transaction_info = parse_email(service, 'me', msg['id'])
-        logger.info(f"Processing transaction: {transaction_info}")
-        
+        logger.debug(f"Processing transaction: {transaction_info}")
+
         # Process through AI client
         result = process_transaction(client, transaction_info)
         if result:
@@ -80,36 +83,56 @@ def process_emails() -> List[List[str]]:
 def run_pipeline(save_to_file: bool = True, upload_to_sheets: bool = True) -> Optional[List[List[str]]]:
     """
     Run the full AutoSpendTracker pipeline.
-    
+
     Args:
         save_to_file: Whether to save results to a local JSON file
         upload_to_sheets: Whether to upload results to Google Sheets
-        
+
     Returns:
         Processed transaction data or None if an error occurred
     """
     try:
+        logger.info("=" * 60)
+        logger.info("Starting transaction processing pipeline")
+        logger.info("=" * 60)
+
         # Process emails to extract transaction data
+        logger.info("Step 1: Processing emails from Gmail...")
         transaction_data = process_emails()
-        
+
         if not transaction_data:
             logger.warning("No transactions were processed successfully")
+            logger.info("Possible reasons:")
+            logger.info("  - No transaction emails found in Gmail")
+            logger.info("  - Emails found but failed to parse")
+            logger.info("  - AI processing failed for all transactions")
             return None
-            
+
+        logger.info(f"Successfully processed {len(transaction_data)} transactions")
+
         # Save data to file if requested
         if save_to_file:
+            logger.info("Step 2: Saving data to local file...")
             save_transaction_data(transaction_data)
-            
+            logger.info("✓ Data saved successfully")
+
         # Upload data to Google Sheets if requested
         if upload_to_sheets:
+            logger.info("Step 3: Uploading data to Google Sheets...")
             spreadsheet_id = CONFIG.get("SPREADSHEET_ID")
             range_name = CONFIG.get("SHEET_RANGE", "Sheet1!A2:G")
             append_to_sheet(transaction_data, spreadsheet_id, range_name)
-            
+            logger.info("✓ Data uploaded to Google Sheets successfully")
+
+        logger.info("=" * 60)
+        logger.info(f"Pipeline completed successfully: {len(transaction_data)} transactions processed")
+        logger.info("=" * 60)
         return transaction_data
-        
+
     except Exception as e:
+        logger.error("=" * 60)
         logger.error(f"Error during pipeline execution: {e}", exc_info=True)
+        logger.error("=" * 60)
         return None
 
 
@@ -118,10 +141,32 @@ def main():
     # Set up logging based on configured log level
     log_level = CONFIG.get("LOG_LEVEL", "INFO")
     setup_logging(level=getattr(logging, log_level))
-    
+
     logger.info("Starting AutoSpendTracker")
-    run_pipeline()
-    logger.info("AutoSpendTracker completed")
+
+    # Validate required configuration
+    missing_config = []
+    if not CONFIG.get("PROJECT_ID"):
+        missing_config.append("PROJECT_ID")
+    if not CONFIG.get("SPREADSHEET_ID"):
+        missing_config.append("SPREADSHEET_ID")
+
+    if missing_config:
+        logger.error(f"Missing required configuration: {', '.join(missing_config)}")
+        logger.error("Please set these values in your .env file")
+        logger.error("Example: PROJECT_ID=your-google-cloud-project-id")
+        return
+
+    # Run the pipeline
+    result = run_pipeline()
+
+    if result:
+        logger.info(f"AutoSpendTracker completed successfully - processed {len(result)} transactions")
+    else:
+        logger.warning("AutoSpendTracker completed but no transactions were processed")
+        logger.info("This could mean: no emails found, or all processing failed")
+
+    logger.info("AutoSpendTracker finished")
 
 
 if __name__ == '__main__':

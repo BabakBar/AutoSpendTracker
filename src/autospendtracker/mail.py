@@ -6,34 +6,46 @@ This module handles fetching and parsing transaction emails.
 import base64
 import re
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
 import email.utils
 
 from bs4 import BeautifulSoup
 
 from autospendtracker.auth import gmail_authenticate
+from autospendtracker.config import CONFIG
 
 # Set up logging (uses centralized configuration from logging_config)
 logger = logging.getLogger(__name__)
 
-def search_messages(service, user_id: str = 'me') -> Optional[List[Dict[str, Any]]]:
+def search_messages(service, user_id: str = 'me', days_back: Optional[int] = None) -> Optional[List[Dict[str, Any]]]:
     """
     Search for transaction emails from Wise and PayPal.
-    
+
     Args:
         service: Gmail API service instance
         user_id: User's email address. Default 'me' refers to authenticated user
-        
+        days_back: Number of days to look back. If None, uses EMAIL_DAYS_BACK from config (default: 7)
+
     Returns:
         List of message objects or None if error occurs
     """
+    # Get days_back from config if not provided
+    if days_back is None:
+        days_back = int(CONFIG.get("EMAIL_DAYS_BACK", 7))
+
+    # Calculate the date to search from
+    search_date = datetime.now() - timedelta(days=days_back)
+    date_str = search_date.strftime('%Y/%m/%d')
+
+    # Build query with date filter
     query = (
-        '(from:noreply@wise.com ("You spent" OR "is now in")) OR '
-        '(from:service@paypal.de "Von Ihnen gezahlt")'
+        f'after:{date_str} AND '
+        '((from:noreply@wise.com ("You spent" OR "is now in")) OR '
+        '(from:service@paypal.de "Von Ihnen gezahlt"))'
     )
     try:
-        logger.info("Searching for transaction emails")
+        logger.info(f"Searching for transaction emails from the last {days_back} days (since {date_str})")
         response = service.users().messages().list(userId=user_id, q=query).execute()
         messages = response.get('messages', [])
         logger.info(f"Found {len(messages)} transaction emails")
@@ -127,7 +139,7 @@ def parse_email(service, user_id: str, msg_id: str) -> Dict[str, Optional[str]]:
             if date_tuple:
                 transaction_details['date'] = datetime.fromtimestamp(
                     email.utils.mktime_tz(date_tuple)
-                ).strftime('%d-%m-%Y %H:%M %p')
+                ).strftime('%d-%m-%Y %I:%M %p')
 
         # Parse transaction details
         wise_pattern = re.compile(r'You spent ([\d,\.]+) ([A-Z]{3}) at ([^.]+)')
