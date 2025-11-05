@@ -42,3 +42,5 @@ wk.txt
 .uv/
 uv.lock
 docs/modernize.md
+autospendtracker.env
+.DS_Store
