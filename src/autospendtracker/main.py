@@ -9,6 +9,8 @@ import os
 from pathlib import Path
 from typing import Dict, List, Optional, Any
 
+from tqdm import tqdm
+
 from autospendtracker.auth import gmail_authenticate
 from autospendtracker.mail import search_messages, parse_email
 from autospendtracker.ai import initialize_ai_model, process_transaction
@@ -64,11 +66,12 @@ def process_emails() -> List[List[str]]:
         logger.info("No transaction emails found")
         return sheet_data
         
-    # Process each message
-    for msg in messages:
+    # Process each message with progress bar
+    logger.info(f"Processing {len(messages)} emails...")
+    for msg in tqdm(messages, desc="Processing emails", unit="email"):
         transaction_info = parse_email(service, 'me', msg['id'])
-        logger.info(f"Processing transaction: {transaction_info}")
-        
+        logger.debug(f"Processing transaction: {transaction_info}")
+
         # Process through AI client
         result = process_transaction(client, transaction_info)
         if result:

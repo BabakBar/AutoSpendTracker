@@ -102,7 +102,8 @@ def check_dependencies():
         "google-auth-oauthlib": "google_auth_oauthlib",
         "beautifulsoup4": "bs4",
         "python-dotenv": "dotenv",
-        "pydantic": "pydantic"
+        "pydantic": "pydantic",
+        "tqdm": "tqdm"
     }
 
     missing = []
