@@ -29,7 +29,7 @@ load_dotenv()
 # Environment variables with defaults
 PROJECT_ID = os.getenv('PROJECT_ID')
 LOCATION = os.getenv('LOCATION', 'us-central1')
-MODEL_NAME = os.getenv('MODEL_NAME', 'gemini-2.0-flash-lite-001')
+MODEL_NAME = os.getenv('MODEL_NAME', 'gemini-2.5-flash')
 
 # Category hints for better classification
 CATEGORY_HINTS = {

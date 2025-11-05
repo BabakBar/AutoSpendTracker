@@ -2,7 +2,7 @@
 name = "autospendtracker"
 version = "1.0.0"
 description = "Automated expense tracking using Gmail and Vertex AI."
-requires-python = ">=3.13"
+requires-python = ">=3.11"
 dependencies = [
     "google-auth-oauthlib>=1.0.0",
     "google-auth-httplib2>=0.1.0",
@@ -34,7 +34,7 @@ quote-style = "double"
 known-first-party = ["autospendtracker"]
 
 [tool.mypy]
-python_version = "3.13" # Match your requires-python
+python_version = "3.11" # Match your requires-python
 warn_return_any = true
 warn_unused_configs = true
 ignore_missing_imports = true

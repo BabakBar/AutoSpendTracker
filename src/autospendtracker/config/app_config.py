@@ -30,7 +30,7 @@ DEFAULT_CONFIG = {
     "TOKEN_DIR": str(Path.home() / ".autospendtracker" / "secrets"),
     
     # AI Model settings
-    "MODEL_NAME": "gemini-1.5-pro-001",  # Updated to a more widely available model
+    "MODEL_NAME": "gemini-2.5-flash",  # Latest Gemini model
     "MODEL_TEMPERATURE": 0.1,
 }
 
