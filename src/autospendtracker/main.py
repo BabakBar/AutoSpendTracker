@@ -12,7 +12,7 @@ from typing import Dict, List, Optional, Any
 from tqdm import tqdm
 
 from autospendtracker.auth import gmail_authenticate
-from autospendtracker.mail import search_messages, parse_email
+from autospendtracker.mail import search_messages, parse_email, get_or_create_label, add_label_to_message
 from autospendtracker.ai import initialize_ai_model, process_transaction
 from autospendtracker.sheets import append_to_sheet, load_transaction_data
 from autospendtracker.config import setup_logging, get_config, CONFIG
@@ -44,7 +44,7 @@ def save_transaction_data(data: List[List[str]], file_path: str = None) -> None:
 def process_emails() -> List[List[str]]:
     """
     Process emails to extract transaction information.
-    
+
     Returns:
         List of processed transaction data rows
     """
@@ -54,18 +54,28 @@ def process_emails() -> List[List[str]]:
         location=CONFIG.get("LOCATION"),
         model_name=CONFIG.get("MODEL_NAME")
     )
-    
+
     # Initialize Gmail service
     service = gmail_authenticate()
-    
+
+    # Initialize Gmail label for marking processed emails
+    label_name = CONFIG.get("GMAIL_LABEL_NAME", "AutoSpendTracker/Processed")
+    label_id = get_or_create_label(service, label_name)
+
+    if not label_id:
+        logger.warning(f"Failed to get/create label '{label_name}' - emails won't be marked as processed")
+        logger.warning("This may result in duplicate processing on subsequent runs")
+    else:
+        logger.info(f"Using Gmail label: {label_name} (ID: {label_id})")
+
     # Find transaction emails
     sheet_data = []
     messages = search_messages(service)
-    
+
     if not messages:
         logger.info("No transaction emails found")
         return sheet_data
-        
+
     # Process each message with progress bar
     logger.info(f"Processing {len(messages)} emails...")
     for msg in tqdm(messages, desc="Processing emails", unit="email"):
@@ -76,7 +86,15 @@ def process_emails() -> List[List[str]]:
         result = process_transaction(client, transaction_info)
         if result:
             sheet_data.append(result)
-    
+
+            # Mark email as processed
+            if label_id:
+                labeled = add_label_to_message(service, msg['id'], label_id)
+                if labeled:
+                    logger.debug(f"Labeled email {msg['id']} as processed")
+                else:
+                    logger.warning(f"Failed to label email {msg['id']} - may be reprocessed next run")
+
     return sheet_data
 
 
