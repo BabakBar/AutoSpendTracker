@@ -20,6 +20,9 @@ from autospendtracker.utils import retry_api_call
 # Set up logging
 logger = logging.getLogger(__name__)
 
+# Check for verbose logging mode
+VERBOSE_LOGGING = os.getenv('VERBOSE_LOGGING', '').lower() in ('true', '1', 'yes')
+
 # Load environment variables
 load_dotenv()
 
@@ -50,7 +53,7 @@ def create_sheets_service(service_account_file: str = None):
             scopes=['https://www.googleapis.com/auth/spreadsheets'],
         )
         credentials.refresh(Request())
-        service = build('sheets', 'v4', credentials=credentials)
+        service = build('sheets', 'v4', credentials=credentials, cache_discovery=False)
         return service.spreadsheets()
     except FileNotFoundError as e:
         logger.error(f"Service account file not found: {e}")
@@ -89,8 +92,9 @@ def append_to_sheet(
             body=body
         ).execute()
         
-        updated_cells = result.get('updates', {}).get('updatedCells', 0)
-        logger.info(f"{updated_cells} cells appended to Google Sheet")
+        if VERBOSE_LOGGING:
+            updated_cells = result.get('updates', {}).get('updatedCells', 0)
+            logger.info(f"{updated_cells} cells appended to Google Sheet")
         return result
     except Exception as e:
         logger.error(f"Failed to append data to sheet: {e}")

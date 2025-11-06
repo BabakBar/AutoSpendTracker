@@ -76,7 +76,7 @@ def initialize_ai_model(
         raise ConfigurationError("PROJECT_ID environment variable is required")
     
     # Add diagnostic logging
-    logger.info(f"Initializing AI model with: project_id={project_id}, location={location}, model_name={model_name}")
+    logger.debug(f"Initializing AI model with: project_id={project_id}, location={location}, model_name={model_name}")
     
     try:
         # Use security module to get the service account file path
@@ -86,7 +86,7 @@ def initialize_ai_model(
                 os.getenv('SERVICE_ACCOUNT_FILE', 'ASTservice.json')
             )
         
-        logger.info(f"Using service account file: {service_account_file}")
+        logger.debug(f"Using service account file: {service_account_file}")
         
         # Load credentials from the service account file
         credentials = service_account.Credentials.from_service_account_file(
@@ -102,7 +102,7 @@ def initialize_ai_model(
             credentials=credentials
         )
         
-        logger.info(f"Successfully initialized Google Gen AI client with model_name={model_name}")
+        logger.debug(f"Successfully initialized Google Gen AI client with model_name={model_name}")
         return client
     except FileNotFoundError as e:
         logger.error(f"Service account file not found: {e}")
@@ -210,7 +210,7 @@ def prompt_vertex(client: Any, prompt_text: str, model_name: str = None) -> Opti
     if model_name is None:
         model_name = os.getenv('MODEL_NAME') or get_config_value('MODEL_NAME', 'gemini-2.5-flash')
     try:
-        logger.info("Sending prompt to model")
+        logger.debug("Sending prompt to model")
         response = client.models.generate_content(
             model=model_name,
             contents=prompt_text,
@@ -221,7 +221,7 @@ def prompt_vertex(client: Any, prompt_text: str, model_name: str = None) -> Opti
                 top_k=40
             )
         )
-        logger.info("Received response from model")
+        logger.debug("Received response from model")
         return response.text if response.text else None
     except Exception as e:
         logger.error(f"Error getting model response: {str(e)}")

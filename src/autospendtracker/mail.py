@@ -4,6 +4,7 @@ This module handles fetching and parsing transaction emails.
 """
 
 import base64
+import os
 import re
 import logging
 from datetime import datetime, timedelta
@@ -18,6 +19,9 @@ from autospendtracker.utils import retry_api_call
 
 # Set up logging (uses centralized configuration from logging_config)
 logger = logging.getLogger(__name__)
+
+# Check for verbose logging mode
+VERBOSE_LOGGING = os.getenv('VERBOSE_LOGGING', '').lower() in ('true', '1', 'yes')
 
 @retry_api_call
 def get_or_create_label(service, label_name: str) -> Optional[str]:
@@ -39,7 +43,8 @@ def get_or_create_label(service, label_name: str) -> Optional[str]:
         # Search for existing label
         for label in labels:
             if label['name'] == label_name:
-                logger.info(f"Found existing Gmail label: {label_name} (ID: {label['id']})")
+                if VERBOSE_LOGGING:
+                    logger.info(f"Found existing Gmail label: {label_name} (ID: {label['id']})")
                 return label['id']
 
         # Label doesn't exist, create it
@@ -130,7 +135,9 @@ def search_messages(service, user_id: str = 'me', days_back: Optional[int] = Non
             if request:
                 logger.debug(f"Fetching next page of emails... ({len(all_messages)} so far)")
 
-        logger.info(f"Found {len(all_messages)} transaction emails across all pages")
+        # Use singular/plural correctly
+        email_word = "email" if len(all_messages) == 1 else "emails"
+        logger.info(f"Found {len(all_messages)} transaction {email_word}")
         return all_messages
     except Exception as error:
         logger.error(f'Error searching messages: {error}')

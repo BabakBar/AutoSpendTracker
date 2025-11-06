@@ -21,6 +21,9 @@ from autospendtracker.monitoring import track_performance, log_metrics_summary
 # Set up logging
 logger = logging.getLogger(__name__)
 
+# Check for verbose logging mode
+VERBOSE_LOGGING = os.getenv('VERBOSE_LOGGING', '').lower() in ('true', '1', 'yes')
+
 
 def save_transaction_data(data: List[List[str]], file_path: str = None) -> None:
     """
@@ -36,7 +39,8 @@ def save_transaction_data(data: List[List[str]], file_path: str = None) -> None:
     try:
         with open(file_path, 'w') as f:
             json.dump(data, f, indent=2)
-        logger.info(f"Saved {len(data)} transactions to {file_path}")
+        if VERBOSE_LOGGING:
+            logger.info(f"Saved {len(data)} transactions to {file_path}")
     except Exception as e:
         logger.error(f"Error saving transaction data: {e}")
         raise
@@ -67,7 +71,7 @@ def process_emails() -> List[List[str]]:
     if not label_id:
         logger.warning(f"Failed to get/create label '{label_name}' - emails won't be marked as processed")
         logger.warning("This may result in duplicate processing on subsequent runs")
-    else:
+    elif VERBOSE_LOGGING:
         logger.info(f"Using Gmail label: {label_name} (ID: {label_id})")
 
     # Find transaction emails
@@ -115,9 +119,11 @@ def run_pipeline(save_to_file: bool = True, upload_to_sheets: bool = True) -> Op
         Processed transaction data or None if an error occurred
     """
     try:
-        logger.info("=" * 60)
+        if VERBOSE_LOGGING:
+            logger.info("=" * 60)
         logger.info("Starting transaction processing pipeline")
-        logger.info("=" * 60)
+        if VERBOSE_LOGGING:
+            logger.info("=" * 60)
 
         # Process emails to extract transaction data
         logger.info("Step 1: Processing emails from Gmail...")
@@ -135,21 +141,29 @@ def run_pipeline(save_to_file: bool = True, upload_to_sheets: bool = True) -> Op
 
         # Save data to file if requested
         if save_to_file:
-            logger.info("Step 2: Saving data to local file...")
+            if VERBOSE_LOGGING:
+                logger.info("Step 2: Saving data to local file...")
             save_transaction_data(transaction_data)
-            logger.info("✓ Data saved successfully")
+            if VERBOSE_LOGGING:
+                logger.info("✓ Data saved successfully")
+            else:
+                logger.info("Step 2: ✓ Data saved to local file")
 
         # Upload data to Google Sheets if requested
         if upload_to_sheets:
-            logger.info("Step 3: Uploading data to Google Sheets...")
+            if VERBOSE_LOGGING:
+                logger.info("Step 3: Uploading data to Google Sheets...")
             spreadsheet_id = CONFIG.get("SPREADSHEET_ID")
             range_name = CONFIG.get("SHEET_RANGE", "Sheet1!A2:G")
             append_to_sheet(transaction_data, spreadsheet_id, range_name)
-            logger.info("✓ Data uploaded to Google Sheets successfully")
+            if VERBOSE_LOGGING:
+                logger.info("✓ Data uploaded to Google Sheets successfully")
+            else:
+                logger.info("Step 3: ✓ Data uploaded to Google Sheets")
 
-        logger.info("=" * 60)
-        logger.info(f"Pipeline completed successfully: {len(transaction_data)} transactions processed")
-        logger.info("=" * 60)
+        # Use singular/plural correctly
+        txn_word = "transaction" if len(transaction_data) == 1 else "transactions"
+        logger.info(f"✓ Pipeline completed: {len(transaction_data)} {txn_word} processed")
 
         # Log performance and API metrics summary
         log_metrics_summary()
@@ -173,7 +187,8 @@ def main():
     log_level = CONFIG.get("LOG_LEVEL", "INFO")
     setup_logging(level=getattr(logging, log_level))
 
-    logger.info("Starting AutoSpendTracker")
+    if VERBOSE_LOGGING:
+        logger.info("Starting AutoSpendTracker")
 
     # Validate required configuration
     missing_config = []
@@ -191,13 +206,10 @@ def main():
     # Run the pipeline
     result = run_pipeline()
 
-    if result:
-        logger.info(f"AutoSpendTracker completed successfully - processed {len(result)} transactions")
-    else:
-        logger.warning("AutoSpendTracker completed but no transactions were processed")
-        logger.info("This could mean: no emails found, or all processing failed")
-
-    logger.info("AutoSpendTracker finished")
+    if not result:
+        logger.warning("No transactions processed")
+        if VERBOSE_LOGGING:
+            logger.info("This could mean: no emails found, or all processing failed")
 
 
 if __name__ == '__main__':

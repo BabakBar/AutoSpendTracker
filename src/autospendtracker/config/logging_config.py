@@ -69,5 +69,13 @@ def setup_logging(
         console_handler = logging.StreamHandler(stream=sys.stdout)
         console_handler.setFormatter(formatter)
         logger.addHandler(console_handler)
-    
+
+    # Silence noisy third-party libraries (INFO/DEBUG level noise)
+    # httpx logs every HTTP request at INFO - too verbose
+    logging.getLogger('httpx').setLevel(logging.WARNING)
+    # Google Gen AI SDK logs internal implementation details
+    logging.getLogger('google_genai').setLevel(logging.WARNING)
+    logging.getLogger('google_genai.models').setLevel(logging.WARNING)
+    logging.getLogger('google_genai._api_client').setLevel(logging.WARNING)
+
     return logger

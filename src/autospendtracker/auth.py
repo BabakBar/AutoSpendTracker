@@ -84,7 +84,7 @@ def gmail_authenticate(
         os.chmod(token_path, 0o600)  # Secure file permissions
         logger.info(f"Credentials saved to: {token_path}")
     
-    return build('gmail', 'v1', credentials=creds)
+    return build('gmail', 'v1', credentials=creds, cache_discovery=False)
 
 
 if __name__ == '__main__':

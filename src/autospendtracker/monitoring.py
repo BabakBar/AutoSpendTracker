@@ -6,6 +6,7 @@ tracking API calls, and calculating costs.
 
 import functools
 import logging
+import os
 import time
 from collections import defaultdict
 from dataclasses import dataclass, field
@@ -327,7 +328,9 @@ def get_metrics_summary() -> Dict[str, Dict[str, Any]]:
 
 def log_metrics_summary() -> None:
     """Log a summary of all collected metrics."""
-    metrics_collector.log_summary()
+    # Only log detailed metrics if explicitly enabled
+    if os.getenv('SHOW_PERFORMANCE_METRICS', '').lower() in ('true', '1', 'yes'):
+        metrics_collector.log_summary()
 
 
 def reset_metrics() -> None:
