@@ -2,12 +2,12 @@
 
 import unittest
 from unittest.mock import patch, MagicMock
-import os
 import sys
 from datetime import datetime
+from pathlib import Path
 
 # Add src directory to path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src")))
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from autospendtracker.mail import search_messages, parse_email, get_email_body
 

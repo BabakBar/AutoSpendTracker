@@ -3,12 +3,12 @@
 This file contains fixtures and setup for pytest.
 """
 
-import os
 import sys
 import pytest
+from pathlib import Path
 
 # Add src directory to path for all tests
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src")))
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 @pytest.fixture
 def mock_env_vars(monkeypatch):

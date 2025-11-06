@@ -4,7 +4,7 @@ import unittest
 from unittest.mock import patch, MagicMock, mock_open
 import json
 import tempfile
-import os
+from pathlib import Path
 
 from autospendtracker.main import (
     save_transaction_data,
@@ -39,7 +39,7 @@ class TestMain(unittest.TestCase):
             self.assertEqual(loaded_data, data)
         finally:
             # Clean up
-            os.unlink(temp_file)
+            Path(temp_file).unlink()
 
     @patch('autospendtracker.main.process_transaction')
     @patch('autospendtracker.main.parse_email')

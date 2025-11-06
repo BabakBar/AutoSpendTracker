@@ -81,7 +81,7 @@ def gmail_authenticate(
         # Save the credentials for the next run
         token_file = Path(token_path)
         token_file.write_text(creds.to_json(), encoding='utf-8')
-        os.chmod(token_path, 0o600)  # Secure file permissions
+        token_file.chmod(0o600)  # Secure file permissions
         logger.info(f"Credentials saved to: {token_path}")
     
     return build('gmail', 'v1', credentials=creds, cache_discovery=False)

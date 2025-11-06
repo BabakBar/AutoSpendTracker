@@ -5,7 +5,7 @@ AutoSpendTracker - Command line entry point.
 
 import logging
 import sys
-import os
+from pathlib import Path
 
 # Setup logging
 logging.basicConfig(
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 if __name__ == "__main__":
     try:
         # Use absolute import to directly specify the package path
-        sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "src")))
+        sys.path.insert(0, str(Path(__file__).parent / "src"))
 
         # Import the main module from the package
         from autospendtracker.main import main as run_main_application
