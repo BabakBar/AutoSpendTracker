@@ -23,6 +23,7 @@ dependencies = [
     "pydantic~=2.10.0",  # Already in use, ensuring latest v2
     "pydantic-settings~=2.11.0",  # Modern config management
     "ratelimit~=2.2.0",  # API rate limiting
+    "apprise~=1.9.0",  # Notification library for email/webhook alerts
     # "perfmetrics~=3.1.0",  # Performance monitoring and metrics - commented out due to build issues
 ]
 

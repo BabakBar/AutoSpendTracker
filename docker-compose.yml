@@ -1,0 +1,216 @@
+# ==============================================================================
+# AutoSpendTracker Docker Compose Configuration
+# ==============================================================================
+# Purpose: Production deployment with Ofelia scheduler for daily cron jobs
+# Architecture: Ofelia scheduler + AutoSpendTracker application
+# ==============================================================================
+
+version: '3.9'
+
+# ==============================================================================
+# Services
+# ==============================================================================
+services:
+
+  # ============================================================================
+  # Ofelia Scheduler - Docker-native cron scheduler
+  # ============================================================================
+  scheduler:
+    image: mcuadros/ofelia:latest
+    container_name: autospendtracker-scheduler
+    restart: unless-stopped
+
+    # Ofelia needs access to Docker socket to execute jobs in other containers
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+    # Ofelia configuration via labels (on the app container below)
+    depends_on:
+      - app
+
+    networks:
+      - autospendtracker-network
+
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+
+  # ============================================================================
+  # AutoSpendTracker Application
+  # ============================================================================
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        BUILDKIT_INLINE_CACHE: 1
+
+    image: autospendtracker:latest
+    container_name: autospendtracker-app
+    restart: unless-stopped
+
+    # Environment variables - Override in Coolify UI
+    environment:
+      # Google Cloud Configuration
+      - PROJECT_ID=${PROJECT_ID}
+      - LOCATION=${LOCATION:-us-central1}
+      - SERVICE_ACCOUNT_FILE=/app/secrets/ASTservice.json
+
+      # Google Sheets Configuration
+      - SPREADSHEET_ID=${SPREADSHEET_ID}
+      - SHEET_RANGE=${SHEET_RANGE:-Sheet1!A2:G}
+
+      # Application Configuration
+      - OUTPUT_FILE=/app/output/transaction_data.json
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+
+      # Email Processing
+      - EMAIL_DAYS_BACK=${EMAIL_DAYS_BACK:-7}
+      - GMAIL_LABEL_NAME=${GMAIL_LABEL_NAME:-AutoSpendTracker/Processed}
+      - GMAIL_CREDENTIALS_FILE=/app/secrets/credentials.json
+
+      # AI Model Configuration
+      - MODEL_NAME=${MODEL_NAME:-gemini-2.5-flash}
+      - MODEL_TEMPERATURE=${MODEL_TEMPERATURE:-0.1}
+
+      # Rate Limiting
+      - API_RATE_LIMIT_CALLS=${API_RATE_LIMIT_CALLS:-60}
+      - API_RATE_LIMIT_PERIOD=${API_RATE_LIMIT_PERIOD:-60}
+
+      # Performance Monitoring
+      - ENABLE_PERFORMANCE_MONITORING=${ENABLE_PERFORMANCE_MONITORING:-true}
+      - METRICS_LOG_LEVEL=${METRICS_LOG_LEVEL:-INFO}
+
+      # Notification Configuration
+      - NOTIFICATION_ENABLED=${NOTIFICATION_ENABLED:-true}
+      - NOTIFICATION_ON_SUCCESS=${NOTIFICATION_ON_SUCCESS:-true}
+      - NOTIFICATION_ON_FAILURE=${NOTIFICATION_ON_FAILURE:-true}
+      - NOTIFICATION_EMAIL=${NOTIFICATION_EMAIL}
+      - NOTIFICATION_SMTP_HOST=${NOTIFICATION_SMTP_HOST:-smtp.gmail.com}
+      - NOTIFICATION_SMTP_PORT=${NOTIFICATION_SMTP_PORT:-587}
+      - NOTIFICATION_SMTP_USER=${NOTIFICATION_SMTP_USER}
+      - NOTIFICATION_SMTP_PASSWORD=${NOTIFICATION_SMTP_PASSWORD}
+      - NOTIFICATION_WEBHOOK=${NOTIFICATION_WEBHOOK:-}
+
+      # Timezone (critical for accurate scheduling)
+      - TZ=${TZ:-America/Mexico_City}
+
+      # Python Configuration
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
+
+    # Persistent volumes for data retention
+    volumes:
+      # OAuth tokens cache (persists across restarts)
+      - tokens:/app/tokens
+
+      # Application logs (20-day retention via logrotate)
+      - logs:/app/logs
+
+      # Transaction output files
+      - output:/app/output
+
+      # Secrets (credentials) - Mount from Coolify secrets
+      # In Coolify, you can upload these files via the UI
+      # Alternative: Create a 'secrets' directory on the host and mount it
+      - ${SECRETS_PATH:-./secrets}:/app/secrets:ro
+
+    networks:
+      - autospendtracker-network
+
+    # Health check configuration
+    healthcheck:
+      test: ["/app/docker/healthcheck.sh"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+    # Resource limits (adjust based on your VPS capacity)
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+    # ============================================================================
+    # Ofelia Job Configuration via Labels
+    # ============================================================================
+    # Ofelia reads these labels to schedule jobs
+    labels:
+      # Enable Ofelia for this container
+      - "ofelia.enabled=true"
+
+      # Job configuration: Daily execution at midnight
+      - "ofelia.job-exec.autospendtracker-daily.schedule=0 0 * * *"
+      - "ofelia.job-exec.autospendtracker-daily.container=autospendtracker-app"
+      - "ofelia.job-exec.autospendtracker-daily.command=python -m autospendtracker"
+
+      # Job options
+      - "ofelia.job-exec.autospendtracker-daily.no-overlap=true"  # Prevent concurrent runs
+      - "ofelia.job-exec.autospendtracker-daily.user=appuser"     # Run as non-root user
+
+      # Enable Watchtower for auto-updates (optional)
+      - "com.centurylinklabs.watchtower.enable=true"
+
+# ==============================================================================
+# Volumes
+# ==============================================================================
+# Named volumes for persistent data
+volumes:
+  tokens:
+    driver: local
+    name: autospendtracker_tokens
+
+  logs:
+    driver: local
+    name: autospendtracker_logs
+
+  output:
+    driver: local
+    name: autospendtracker_output
+
+# ==============================================================================
+# Networks
+# ==============================================================================
+# Custom bridge network for service communication
+networks:
+  autospendtracker-network:
+    driver: bridge
+    name: autospendtracker_network
+
+# ==============================================================================
+# Notes for Coolify Deployment
+# ==============================================================================
+# 1. This docker-compose.yml is the single source of truth for Coolify
+# 2. Set environment variables in Coolify UI (Application → Environment)
+# 3. Upload credential files via Coolify Secrets:
+#    - credentials.json (Gmail OAuth)
+#    - ASTservice.json (Google Cloud Service Account)
+# 4. Coolify will automatically:
+#    - Build the image from Dockerfile
+#    - Start both scheduler and app containers
+#    - Create persistent volumes
+#    - Set up networking
+# 5. No ports need to be exposed (this is a batch job, not a web service)
+# 6. Schedule can be adjusted by changing the cron expression in labels:
+#    - "0 0 * * *"   = Daily at midnight
+#    - "0 */6 * * *" = Every 6 hours
+#    - "0 9 * * 1"   = Every Monday at 9 AM
+# ==============================================================================

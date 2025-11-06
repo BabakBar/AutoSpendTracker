@@ -78,6 +78,72 @@ This is a tool I built to track, categorize, and monitor my spending from multip
    python run_app.py
    ```
 
+## Production Deployment
+
+AutoSpendTracker is production-ready and can be deployed to your VPS using **Coolify** with automated scheduling and email notifications.
+
+### Quick Start
+
+1. **Prerequisites:**
+   - Coolify installed on your VPS
+   - Google Cloud credentials ready
+   - Gmail App Password for notifications
+
+2. **Deploy:**
+   ```bash
+   # Push to GitHub
+   git push origin your-branch
+
+   # Configure in Coolify:
+   # - Add as Docker Compose application
+   # - Set environment variables
+   # - Upload credential files
+   # - Click Deploy!
+   ```
+
+3. **Features:**
+   - ✅ Automated daily execution at midnight (configurable)
+   - ✅ Email notifications on success/failure
+   - ✅ 20-day log retention
+   - ✅ Health monitoring and auto-restart
+   - ✅ Secure credential management
+   - ✅ ~180MB minimal Docker image
+
+### Architecture
+
+```
+VPS (Coolify)
+├── Ofelia Scheduler (Docker-native cron)
+└── AutoSpendTracker Container
+    ├── Python 3.13 + UV package manager
+    ├── Apprise notification system
+    ├── Persistent volumes (tokens, logs, output)
+    └── Non-root execution (secure)
+```
+
+### Cost Estimate
+
+- **VPS Hosting:** $5-10/month (Coolify-managed)
+- **Gmail API:** Free (1B requests/day)
+- **Sheets API:** Free (300 requests/min)
+- **Gemini API:** ~$0.09/month (15 transactions/day)
+
+**Total:** ~$6-11/month for fully automated expense tracking!
+
+### Complete Guide
+
+📖 **[Read the full Coolify Deployment Guide](docs/DEPLOYMENT.md)**
+
+Covers:
+- Step-by-step deployment instructions
+- Environment configuration
+- Troubleshooting common issues
+- Monitoring and maintenance
+- Security best practices
+- Advanced configuration options
+
+---
+
 ## Project Structure
 
 ```
