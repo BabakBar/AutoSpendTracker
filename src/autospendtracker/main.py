@@ -16,6 +16,7 @@ from autospendtracker.mail import search_messages, parse_email, get_or_create_la
 from autospendtracker.ai import initialize_ai_model, process_transaction
 from autospendtracker.sheets import append_to_sheet, load_transaction_data
 from autospendtracker.config import setup_logging, get_config, CONFIG
+from autospendtracker.monitoring import track_performance, log_metrics_summary
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -41,6 +42,7 @@ def save_transaction_data(data: List[List[str]], file_path: str = None) -> None:
         raise
 
 
+@track_performance
 def process_emails() -> List[List[str]]:
     """
     Process emails to extract transaction information.
@@ -100,6 +102,7 @@ def process_emails() -> List[List[str]]:
     return sheet_data
 
 
+@track_performance
 def run_pipeline(save_to_file: bool = True, upload_to_sheets: bool = True) -> Optional[List[List[str]]]:
     """
     Run the full AutoSpendTracker pipeline.
@@ -147,12 +150,20 @@ def run_pipeline(save_to_file: bool = True, upload_to_sheets: bool = True) -> Op
         logger.info("=" * 60)
         logger.info(f"Pipeline completed successfully: {len(transaction_data)} transactions processed")
         logger.info("=" * 60)
+
+        # Log performance and API metrics summary
+        log_metrics_summary()
+
         return transaction_data
 
     except Exception as e:
         logger.error("=" * 60)
         logger.error(f"Error during pipeline execution: {e}", exc_info=True)
         logger.error("=" * 60)
+
+        # Log metrics even on failure for debugging
+        log_metrics_summary()
+
         return None
 
 
