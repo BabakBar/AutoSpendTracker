@@ -118,6 +118,24 @@ AutoSpendTracker/
 ## Recent Improvements
 
 ### Latest Updates (November 2025)
+
+#### Phase 1: Modernization (Python 3.13 + Performance Monitoring)
+- **Python 3.13 Upgrade:** Leveraging latest features including JIT compiler (5-15% faster)
+- **Performance Monitoring:** Comprehensive metrics tracking with decorators for timing and cost analysis
+- **API Cost Tracking:** Real-time token usage and cost monitoring for Gemini API calls
+- **Metrics Dashboard:** Automatic performance and API metrics summary after each run
+
+#### Phase 2: Configuration & Type Safety
+- **Pydantic Settings v2:** Modern, type-safe configuration management with automatic validation
+- **Enhanced Type Checking:** Stricter mypy configuration for better code quality
+- **Environment Variables:** Seamless .env integration with type validation
+
+#### Phase 3: API Cost Control
+- **Rate Limiting:** Adaptive rate limiter with sliding window algorithm (60 calls/min default)
+- **Budget Tracking:** Daily cost budgets with configurable alerts (80% threshold)
+- **Throttling Stats:** Monitor API throttling events and wait times
+
+#### Previous Updates
 - **Weekly Filtering:** Configurable date-based filtering (default: last 7 days) prevents reprocessing all historical emails
 - **Progress Bar:** Visual feedback with tqdm showing real-time progress, count, and ETA
 - **Time Format Fix:** Corrected 12-hour time formatting to handle midnight transactions properly
@@ -126,13 +144,20 @@ AutoSpendTracker/
 - **Auto OAuth Recovery:** Automatic token refresh error handling with seamless re-authentication
 
 ### Core Features
+- **Python 3.13:** Latest Python with JIT compiler and performance improvements
+- **Performance Monitoring:** Track execution time, API calls, tokens, and costs
+- **Rate Limiting:** API cost control with adaptive throttling and budget tracking
+- **Pydantic Settings:** Type-safe configuration with validation
 - **Google Gen AI SDK:** Using the latest Gemini 2.5 Flash model
 - **Modernized Project Structure:** Standard src layout and modular organization
 - **Dependency Management:** Using pyproject.toml with UV for faster dependency management
 - **Enhanced Logging:** Centralized logging configuration with file rotation and Unicode support
-- **Code Quality:** Type hints, documentation strings, and consistent formatting
+- **Code Quality:** Strict type hints, documentation strings, and consistent formatting
 - **Robust Error Handling:** Comprehensive exception handling with detailed logging
 - **Production Ready:** Setup validation, diagnostic tools, and comprehensive documentation
+
+### Modernization Documentation
+For detailed information about the modernization improvements, see [MODERNIZATION.md](docs/MODERNIZATION.md)
 
 *How the output looks like*
 
