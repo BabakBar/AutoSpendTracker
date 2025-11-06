@@ -1,0 +1,165 @@
+# ==============================================================================
+# .dockerignore - Optimize Docker Build Context
+# ==============================================================================
+# Purpose: Exclude unnecessary files from Docker build context
+# Impact: Reduces build context from ~50MB to ~2MB
+# ==============================================================================
+
+# ==============================================================================
+# Version Control
+# ==============================================================================
+.git
+.gitignore
+.gitattributes
+.github
+
+# ==============================================================================
+# Python
+# ==============================================================================
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+.venv
+venv/
+ENV/
+env/
+.env.local
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# Type checking
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pytype/
+
+# ==============================================================================
+# IDE and Editor Files
+# ==============================================================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+
+# ==============================================================================
+# Documentation
+# ==============================================================================
+docs/
+*.md
+!README.md  # Include README for reference
+images/
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+
+# ==============================================================================
+# Local Data and Credentials (CRITICAL - Never include in image)
+# ==============================================================================
+*.json
+!pyproject.toml  # This is needed, not a data file
+credentials.json
+ASTservice.json
+token.json
+gmail-token.json
+transaction_data.json
+
+# Environment files
+.env
+.env.*
+!.env.production.example
+
+# ==============================================================================
+# Application Data and Logs
+# ==============================================================================
+*.log
+logs/
+output/
+tokens/
+secrets/
+*.db
+*.sqlite
+*.sqlite3
+
+# ==============================================================================
+# Docker Files (Don't need these inside the image)
+# ==============================================================================
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# ==============================================================================
+# CI/CD
+# ==============================================================================
+.travis.yml
+.gitlab-ci.yml
+.circleci/
+.github/workflows/
+
+# ==============================================================================
+# Miscellaneous
+# ==============================================================================
+*.bak
+*.tmp
+*.temp
+.cache/
+*.pid
+*.seed
+*.lock  # Except uv.lock which is needed
+!uv.lock  # UV lock file is required for reproducible builds
+
+# ==============================================================================
+# Test Files
+# ==============================================================================
+tests/
+test_*.py
+*_test.py
+conftest.py
+pytest.ini
+tox.ini
+
+# ==============================================================================
+# Project-Specific
+# ==============================================================================
+check_setup.py
+run_app.py  # We use python -m autospendtracker instead

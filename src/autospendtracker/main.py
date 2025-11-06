@@ -6,6 +6,7 @@ This is the main entry point for the AutoSpendTracker application.
 import json
 import logging
 import os
+import time
 from pathlib import Path
 from typing import Dict, List, Optional, Any
 
@@ -17,6 +18,7 @@ from autospendtracker.ai import initialize_ai_model, process_transaction
 from autospendtracker.sheets import append_to_sheet, load_transaction_data
 from autospendtracker.config import setup_logging, get_config, CONFIG
 from autospendtracker.monitoring import track_performance, log_metrics_summary
+from autospendtracker.notifier import send_success_notification, send_failure_notification
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -181,8 +183,13 @@ def run_pipeline(save_to_file: bool = True, upload_to_sheets: bool = True) -> Op
         return None
 
 
-def main():
-    """Main entry point for the application."""
+def main() -> int:
+    """
+    Main entry point for the application.
+
+    Returns:
+        Exit code: 0 for success, 1 for failure
+    """
     # Set up logging based on configured log level
     log_level = CONFIG.get("LOG_LEVEL", "INFO")
     setup_logging(level=getattr(logging, log_level))
@@ -201,16 +208,72 @@ def main():
         logger.error(f"Missing required configuration: {', '.join(missing_config)}")
         logger.error("Please set these values in your .env file")
         logger.error("Example: PROJECT_ID=your-google-cloud-project-id")
-        return
+        return 1
 
-    # Run the pipeline
-    result = run_pipeline()
+    # Track start time for metrics
+    start_time = time.time()
 
-    if not result:
-        logger.warning("No transactions processed")
-        if VERBOSE_LOGGING:
-            logger.info("This could mean: no emails found, or all processing failed")
+    try:
+        # Run the pipeline
+        result = run_pipeline()
+
+        if not result:
+            logger.warning("No transactions processed")
+            if VERBOSE_LOGGING:
+                logger.info("This could mean: no emails found, or all processing failed")
+            # Don't send notification for "no transactions" - not an error
+            return 0
+
+        # Calculate metrics for notification
+        runtime = time.time() - start_time
+        transaction_count = len(result)
+
+        # Calculate total amount from transactions
+        total_amount = 0.0
+        for transaction_row in result:
+            try:
+                # Amount is the first column in the row
+                amount_str = transaction_row[0] if len(transaction_row) > 0 else "0.00"
+                total_amount += float(amount_str)
+            except (ValueError, IndexError):
+                pass
+
+        # Get API cost from monitoring (if available)
+        # This would need to be extracted from monitoring module
+        api_cost = 0.0  # Placeholder - can be enhanced with actual cost tracking
+
+        # Send success notification
+        send_success_notification(
+            email_count=transaction_count,
+            transaction_count=transaction_count,
+            total_amount=total_amount,
+            runtime=runtime,
+            api_cost=api_cost
+        )
+
+        logger.info(f"✓ AutoSpendTracker completed successfully in {runtime:.1f}s")
+        return 0
+
+    except Exception as e:
+        # Calculate runtime even on failure
+        runtime = time.time() - start_time
+
+        logger.error("=" * 60)
+        logger.error(f"AutoSpendTracker failed: {e}", exc_info=True)
+        logger.error("=" * 60)
+
+        # Send failure notification
+        send_failure_notification(
+            error=e,
+            context={
+                'runtime': f"{runtime:.1f}s",
+                'log_level': log_level,
+            }
+        )
+
+        return 1
 
 
 if __name__ == '__main__':
-    main()
+    import sys
+    sys.exit(main())
