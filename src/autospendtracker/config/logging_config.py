@@ -4,21 +4,21 @@ This module provides a centralized configuration for logging across the applicat
 """
 
 import logging
-import os
 import sys
 import io
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
+from typing import Union
 
 # Default locations
-DEFAULT_LOG_DIR = os.path.join(os.path.expanduser("~"), ".autospendtracker", "logs")
-DEFAULT_LOG_FILE = os.path.join(DEFAULT_LOG_DIR, "autospendtracker.log")
+DEFAULT_LOG_DIR = Path.home() / ".autospendtracker" / "logs"
+DEFAULT_LOG_FILE = DEFAULT_LOG_DIR / "autospendtracker.log"
 
 def setup_logging(
-    level=logging.INFO, 
-    log_file=DEFAULT_LOG_FILE,
-    console=True
-):
+    level: int = logging.INFO,
+    log_file: Union[str, Path, None] = DEFAULT_LOG_FILE,
+    console: bool = True
+) -> logging.Logger:
     """Set up logging configuration.
     
     Args:
@@ -42,9 +42,10 @@ def setup_logging(
     # Set up file logging
     if log_file:
         # Create directory if it doesn't exist
-        log_dir = os.path.dirname(log_file)
+        log_path = Path(log_file)
+        log_dir = log_path.parent
         if log_dir:
-            os.makedirs(log_dir, exist_ok=True)
+            log_dir.mkdir(parents=True, exist_ok=True)
             
         # Create rotating file handler (10MB max, keep 3 backups)
         file_handler = RotatingFileHandler(

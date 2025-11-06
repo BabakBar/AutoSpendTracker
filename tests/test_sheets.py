@@ -4,6 +4,7 @@ import unittest
 from unittest.mock import patch, MagicMock, mock_open
 import json
 import tempfile
+from pathlib import Path
 
 from autospendtracker.sheets import (
     create_sheets_service,
@@ -106,8 +107,7 @@ class TestSheets(unittest.TestCase):
             self.assertEqual(len(result), 2)
         finally:
             # Clean up
-            import os
-            os.unlink(temp_file)
+            Path(temp_file).unlink()
 
     def test_load_transaction_data_file_not_found(self):
         """Test loading from non-existent file."""

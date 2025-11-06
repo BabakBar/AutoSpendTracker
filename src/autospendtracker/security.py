@@ -77,7 +77,7 @@ def secure_token_path(base_path: str = 'token.pickle') -> str:
     # Set appropriate permissions on Unix systems
     try:
         if os.name == 'posix':  # Unix-like system
-            os.chmod(secure_dir, 0o700)  # rwx for user only
+            secure_dir.chmod(0o700)  # rwx for user only
     except Exception as e:
         logger.warning(f"Could not set secure permissions: {e}")
     
