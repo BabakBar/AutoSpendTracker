@@ -68,7 +68,7 @@ This is a tool I built to track, categorize, and monitor my spending from multip
    ```
    PROJECT_ID=your-google-cloud-project-id
    SPREADSHEET_ID=your-google-sheets-spreadsheet-id
-   MODEL_NAME=gemini-2.5-flash
+   MODEL_NAME=gemini-3-flash-preview
    EMAIL_DAYS_BACK=7  # Process last 7 days (weekly analysis)
    ```
 
@@ -174,7 +174,7 @@ AutoSpendTracker/
 
 - **Automatic Email Processing:** Scans your Gmail for transaction notifications
 - **Smart Weekly Filtering:** Processes only recent emails (configurable date range) to avoid reprocessing
-- **AI-Powered Categorization:** Uses Google's Gen AI (Gemini 2.5 Flash) to intelligently categorize transactions
+- **AI-Powered Categorization:** Uses Google's Gen AI (Gemini 3 Flash Preview) to intelligently categorize transactions
 - **Currency Support:** Handles multiple currencies (USD, EUR, MXN, TRY, etc.)
 - **Progress Tracking:** Real-time progress bar with ETA for long-running operations
 - **Google Sheets Integration:** Automatically populates a spreadsheet for tracking
@@ -214,7 +214,7 @@ AutoSpendTracker/
 - **Performance Monitoring:** Track execution time, API calls, tokens, and costs
 - **Rate Limiting:** API cost control with adaptive throttling and budget tracking
 - **Pydantic Settings:** Type-safe configuration with validation
-- **Google Gen AI SDK:** Using the latest Gemini 2.5 Flash model
+- **Google Gen AI SDK:** Using the latest Gemini 3 Flash Preview model
 - **Modernized Project Structure:** Standard src layout and modular organization
 - **Dependency Management:** Using pyproject.toml with UV for faster dependency management
 - **Enhanced Logging:** Centralized logging configuration with file rotation and Unicode support

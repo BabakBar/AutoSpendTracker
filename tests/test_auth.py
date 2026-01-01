@@ -17,17 +17,18 @@ class TestAuth(unittest.TestCase):
 
     @patch('autospendtracker.auth.build')
     @patch('autospendtracker.auth.InstalledAppFlow.from_client_secrets_file')
-    @patch('autospendtracker.auth.pickle.dump')
-    @patch('autospendtracker.auth.pickle.load')
+    @patch('autospendtracker.auth.Path.write_text')
+    @patch('autospendtracker.auth.Path.chmod')
     @patch('autospendtracker.auth.Path.exists')
-    def test_gmail_authenticate_new_token(self, mock_exists, mock_pickle_load, 
-                                        mock_pickle_dump, mock_flow, mock_build):
+    def test_gmail_authenticate_new_token(self, mock_exists, mock_chmod, mock_write_text, 
+                                        mock_flow, mock_build):
         """Test gmail_authenticate when no valid token exists."""
         # Mock Path.exists to return False (no token file)
         mock_exists.return_value = False
         
         # Mock the OAuth flow
         mock_creds = MagicMock()
+        mock_creds.to_json.return_value = '{"token": "fake"}'
         mock_flow.return_value.run_local_server.return_value = mock_creds
         
         # Mock the build function
@@ -45,11 +46,11 @@ class TestAuth(unittest.TestCase):
             mock_flow.assert_called_once_with("dummy_credentials.json", DEFAULT_SCOPES)
             mock_flow.return_value.run_local_server.assert_called_once_with(port=0)
             
-            # Check that pickle.dump was called to save the token
-            mock_pickle_dump.assert_called_once()
+            # Check that write_text was called to save the token
+            mock_write_text.assert_called_once()
             
             # Check that build was called correctly
-            mock_build.assert_called_once_with('gmail', 'v1', credentials=mock_creds)
+            mock_build.assert_called_once_with('gmail', 'v1', credentials=mock_creds, cache_discovery=False)
             
             # Check that the function returns the service
             self.assertEqual(result, mock_service)

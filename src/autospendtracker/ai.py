@@ -20,7 +20,7 @@ from dotenv import load_dotenv
 from autospendtracker.security import get_credential_path
 from autospendtracker.models import Transaction, ALLOWED_CATEGORIES
 from autospendtracker.exceptions import AIModelError, CredentialError, ConfigurationError
-from autospendtracker.config.app_config import get_config_value
+from autospendtracker.config.settings import get_settings
 from autospendtracker.monitoring import track_performance, track_api_call
 from autospendtracker.rate_limiter import rate_limit
 
@@ -59,18 +59,19 @@ def initialize_ai_model(
         project_id: Google Cloud project ID (defaults to PROJECT_ID env var)
         location: Google Cloud location (defaults to LOCATION env var or 'us-central1')
         service_account_file: Path to service account JSON file
-        model_name: Name of the model to use (defaults to MODEL_NAME env var or 'gemini-2.5-flash')
+        model_name: Name of the model to use (defaults to settings.model_name)
 
     Returns:
         Initialized Google Gen AI client
     """
-    # Resolve config at runtime (not import time) for dynamic configuration support
+    # Resolve config at runtime from settings (single source of truth)
+    settings = get_settings()
     if project_id is None:
-        project_id = os.getenv('PROJECT_ID')
+        project_id = settings.project_id
     if location is None:
-        location = os.getenv('LOCATION') or get_config_value('LOCATION', 'us-central1')
+        location = settings.location
     if model_name is None:
-        model_name = os.getenv('MODEL_NAME') or get_config_value('MODEL_NAME', 'gemini-2.5-flash')
+        model_name = settings.model_name
 
     if not project_id:
         raise ConfigurationError("PROJECT_ID environment variable is required")
@@ -193,7 +194,7 @@ def clean_json_response(response: str) -> str:
 
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
 @rate_limit(max_calls=60, period=60, name="gemini-api")
-@track_api_call("gemini-generate-content", model_name="gemini-2.5-flash")
+@track_api_call("gemini-generate-content")
 def prompt_vertex(client: Any, prompt_text: str, model_name: str = None) -> Optional[str]:
     """
     Sends a prompt to the Google Gen AI model with retry logic.
@@ -201,14 +202,14 @@ def prompt_vertex(client: Any, prompt_text: str, model_name: str = None) -> Opti
     Args:
         client: Initialized Google Gen AI client
         prompt_text: The prompt to send
-        model_name: Name of the model to use (defaults to MODEL_NAME env var or 'gemini-2.5-flash')
+        model_name: Name of the model to use (defaults to settings.model_name)
 
     Returns:
         Model's response text or None if failed
     """
-    # Resolve model_name at runtime if not provided
+    # Resolve model_name from settings if not provided
     if model_name is None:
-        model_name = os.getenv('MODEL_NAME') or get_config_value('MODEL_NAME', 'gemini-2.5-flash')
+        model_name = get_settings().model_name
     try:
         logger.debug("Sending prompt to model")
         response = client.models.generate_content(
@@ -236,14 +237,14 @@ def process_transaction(client: Any, transaction_info: Dict[str, Any], model_nam
     Args:
         client: Initialized Google Gen AI client
         transaction_info: Transaction details to process
-        model_name: Name of the model to use (defaults to MODEL_NAME env var or 'gemini-2.5-flash')
+        model_name: Name of the model to use (defaults to settings.model_name)
 
     Returns:
         List of transaction data fields or None if processing failed
     """
-    # Resolve model_name at runtime if not provided
+    # Resolve model_name from settings if not provided
     if model_name is None:
-        model_name = os.getenv('MODEL_NAME') or get_config_value('MODEL_NAME', 'gemini-2.5-flash')
+        model_name = get_settings().model_name
     if not transaction_info.get('info'):
         logger.info("No transaction info found")
         return None

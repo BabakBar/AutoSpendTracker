@@ -76,7 +76,7 @@ services:
       - GMAIL_CREDENTIALS_FILE=/app/secrets/credentials.json
 
       # AI Model Configuration
-      - MODEL_NAME=${MODEL_NAME:-gemini-2.5-flash}
+      - MODEL_NAME=${MODEL_NAME:-gemini-3-flash-preview}
       - MODEL_TEMPERATURE=${MODEL_TEMPERATURE:-0.1}
 
       # Rate Limiting

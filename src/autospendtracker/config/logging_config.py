@@ -5,13 +5,20 @@ This module provides a centralized configuration for logging across the applicat
 
 import logging
 import sys
+import os
 import io
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Union
 
 # Default locations
-DEFAULT_LOG_DIR = Path.home() / ".autospendtracker" / "logs"
+# Check for LOG_DIR environment variable (useful for Docker/Configurable paths)
+_env_log_dir = os.getenv("LOG_DIR")
+if _env_log_dir:
+    DEFAULT_LOG_DIR = Path(_env_log_dir)
+else:
+    DEFAULT_LOG_DIR = Path.home() / ".autospendtracker" / "logs"
+
 DEFAULT_LOG_FILE = DEFAULT_LOG_DIR / "autospendtracker.log"
 
 def setup_logging(

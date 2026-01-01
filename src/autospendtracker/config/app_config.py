@@ -10,6 +10,8 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+from autospendtracker.config.settings import DEFAULT_MODEL_NAME
+
 # Set up logging
 logger = logging.getLogger(__name__)
 
@@ -34,7 +36,7 @@ DEFAULT_CONFIG = {
     "GMAIL_LABEL_NAME": "AutoSpendTracker/Processed",  # Label for marking processed emails
 
     # AI Model settings
-    "MODEL_NAME": "gemini-2.5-flash",  # Latest Gemini model
+    "MODEL_NAME": DEFAULT_MODEL_NAME,
     "MODEL_TEMPERATURE": 0.1,
 }
 

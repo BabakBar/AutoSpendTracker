@@ -129,7 +129,7 @@ echo "  Project ID: ${PROJECT_ID}"
 echo "  Spreadsheet ID: ${SPREADSHEET_ID:0:20}..."
 echo "  Location: ${LOCATION}"
 echo "  Email Days Back: ${EMAIL_DAYS_BACK:-7}"
-echo "  Model: ${MODEL_NAME:-gemini-2.5-flash}"
+echo "  Model: ${MODEL_NAME:-gemini-3-flash-preview}"
 echo "  Timezone: ${TZ:-UTC}"
 echo "  Notifications: ${NOTIFICATION_ENABLED:-false}"
 
@@ -140,5 +140,5 @@ log_info "Starting AutoSpendTracker..."
 echo "========================================"
 
 # Drop privileges and execute the application as appuser
-# Using exec to replace the shell process (PID 1)
-exec su-exec appuser "$@"
+# (User is already set to appuser in Dockerfile)
+exec "$@"
