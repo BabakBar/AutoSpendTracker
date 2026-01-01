@@ -234,24 +234,24 @@ def track_performance(func: F) -> F:
 
 def track_api_call(
     endpoint: str,
-    model_name: str = "gemini-2.5-flash",
-    input_cost_per_1m: float = 0.075,  # Gemini 2.5 Flash pricing
-    output_cost_per_1m: float = 0.30   # Gemini 2.5 Flash pricing
+    model_name: str = None,
+    input_cost_per_1m: float = 0.075,
+    output_cost_per_1m: float = 0.30
 ) -> Callable[[F], F]:
     """
     Decorator to track API call metrics including tokens and costs.
 
     Args:
         endpoint: Name of the API endpoint (e.g., "gemini-generate-content")
-        model_name: Name of the model being used
-        input_cost_per_1m: Cost per 1 million input tokens (default: Gemini 2.5 Flash)
-        output_cost_per_1m: Cost per 1 million output tokens (default: Gemini 2.5 Flash)
+        model_name: Name of the model (defaults to settings.model_name at runtime)
+        input_cost_per_1m: Cost per 1 million input tokens
+        output_cost_per_1m: Cost per 1 million output tokens
 
     Returns:
         Decorator function
 
     Example:
-        @track_api_call("gemini-generate-content", model_name="gemini-2.5-flash")
+        @track_api_call("gemini-generate-content")
         def call_ai_model(client, prompt):
             # API call code
             pass
@@ -259,6 +259,12 @@ def track_api_call(
     def decorator(func: F) -> F:
         @functools.wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
+            # Resolve model_name at runtime from settings if not provided
+            actual_model_name = model_name
+            if actual_model_name is None:
+                from autospendtracker.config.settings import get_settings
+                actual_model_name = get_settings().model_name
+
             start_time = time.perf_counter()
             had_error = False
 
@@ -290,7 +296,7 @@ def track_api_call(
                 latency = time.perf_counter() - start_time
 
                 # Update metrics
-                full_endpoint = f"{endpoint}:{model_name}"
+                full_endpoint = f"{endpoint}:{actual_model_name}"
                 if full_endpoint not in metrics_collector.api_metrics:
                     metrics_collector.api_metrics[full_endpoint] = APIMetrics(
                         endpoint=full_endpoint

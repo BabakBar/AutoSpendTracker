@@ -218,7 +218,7 @@ GMAIL_LABEL_NAME=AutoSpendTracker/Processed
 GMAIL_CREDENTIALS_FILE=/app/secrets/credentials.json
 
 # AI Model
-MODEL_NAME=gemini-2.5-flash
+MODEL_NAME=gemini-3-flash-preview
 MODEL_TEMPERATURE=0.1
 
 # Notifications

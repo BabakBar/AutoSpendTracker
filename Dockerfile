@@ -11,7 +11,6 @@
 FROM python:3.13-slim AS builder
 
 # Install UV package manager from official source
-# UV is 10-100x faster than pip for dependency resolution
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
 # Set UV environment variables for optimal Docker usage
@@ -76,7 +75,8 @@ RUN mkdir -p /app/logs /app/output /app/tokens /app/secrets && \
 ENV PATH="/app/.venv/bin:$PATH" \
     PYTHONPATH="/app/src:$PYTHONPATH" \
     PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1
+    PYTHONDONTWRITEBYTECODE=1 \
+    LOG_DIR="/app/logs"
 
 # Health check - runs every 30 seconds
 # Verifies container is healthy and ready to process jobs
@@ -95,5 +95,5 @@ CMD ["python", "-m", "autospendtracker"]
 # Metadata labels
 LABEL maintainer="babak.barghi@gmail.com" \
       description="AutoSpendTracker - Automated expense tracking from email" \
-      version="2.0.0" \
+      version="2.1.0" \
       org.opencontainers.image.source="https://github.com/BabakBar/AutoSpendTracker"

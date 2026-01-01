@@ -13,6 +13,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 logger = logging.getLogger(__name__)
 
+# Single source of truth for default model
+DEFAULT_MODEL_NAME = "gemini-3-flash-preview"
+
 
 class AppSettings(BaseSettings):
     """Application settings with type validation and environment variable support."""
@@ -78,7 +81,7 @@ class AppSettings(BaseSettings):
 
     # AI Model settings
     model_name: str = Field(
-        default="gemini-2.5-flash",
+        default=DEFAULT_MODEL_NAME,
         description="Google Gen AI model name",
         validation_alias="MODEL_NAME"
     )

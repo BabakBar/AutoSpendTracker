@@ -169,8 +169,16 @@ class TestAI(unittest.TestCase):
         # Check result
         self.assertEqual(result, mock_client_instance)
 
-    def test_initialize_ai_model_no_project_id(self):
+    @patch('autospendtracker.ai.get_settings')
+    def test_initialize_ai_model_no_project_id(self, mock_get_settings):
         """Test that initialization fails without project ID."""
+        # Mock settings to return None for project_id
+        mock_settings = MagicMock()
+        mock_settings.project_id = None
+        mock_settings.location = "us-central1"
+        mock_settings.model_name = "gemini-2.5-flash"
+        mock_get_settings.return_value = mock_settings
+
         with self.assertRaises(ConfigurationError) as context:
             initialize_ai_model(project_id=None)
 
