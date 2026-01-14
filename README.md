@@ -69,12 +69,21 @@ This is a tool I built to track, categorize, and monitor my spending from multip
    PROJECT_ID=your-google-cloud-project-id
    SPREADSHEET_ID=your-google-sheets-spreadsheet-id
    MODEL_NAME=gemini-3-flash-preview
+   LOCATION=global  # Required for Gemini 3 Flash preview (global endpoint)
+   SERVICE_ACCOUNT_FILE=ASTservice.json  # Local path (Docker uses /app/secrets/ASTservice.json)
    EMAIL_DAYS_BACK=7  # Process last 7 days (weekly analysis)
    ```
 
-6. Run the application:
+6. Run the application (UV-style):
 
    ```bash
+   # Recommended: use uv so the .venv is always picked up
+   uv run autospendtracker
+
+   # Alternative: run as a module
+   uv run python -m autospendtracker
+
+   # If you activated the venv manually
    python run_app.py
    ```
 
