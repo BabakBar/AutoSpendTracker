@@ -87,98 +87,6 @@ This is a tool I built to track, categorize, and monitor my spending from multip
    python run_app.py
    ```
 
-## Production Deployment
-
-AutoSpendTracker is production-ready and can be deployed to your VPS using **Coolify** with automated scheduling and email notifications.
-
-### Quick Start
-
-1. **Prerequisites:**
-   - Coolify installed on your VPS
-   - Google Cloud credentials ready
-   - Gmail App Password for notifications
-
-2. **Deploy:**
-   ```bash
-   # Push to GitHub
-   git push origin your-branch
-
-   # Configure in Coolify:
-   # - Add as Docker Compose application
-   # - Set environment variables
-   # - Upload credential files
-   # - Click Deploy!
-   ```
-
-3. **Features:**
-   - ✅ Automated daily execution at midnight (configurable)
-   - ✅ Email notifications on success/failure
-   - ✅ 20-day log retention
-   - ✅ Health monitoring and auto-restart
-   - ✅ Secure credential management
-   - ✅ ~180MB minimal Docker image
-
-### Architecture
-
-```
-VPS (Coolify)
-├── Ofelia Scheduler (Docker-native cron)
-└── AutoSpendTracker Container
-    ├── Python 3.13 + UV package manager
-    ├── Apprise notification system
-    ├── Persistent volumes (tokens, logs, output)
-    └── Non-root execution (secure)
-```
-
-### Cost Estimate
-
-- **VPS Hosting:** $5-10/month (Coolify-managed)
-- **Gmail API:** Free (1B requests/day)
-- **Sheets API:** Free (300 requests/min)
-- **Gemini API:** ~$0.09/month (15 transactions/day)
-
-**Total:** ~$6-11/month for fully automated expense tracking!
-
-### Complete Guide
-
-📖 **[Read the full Coolify Deployment Guide](docs/DEPLOYMENT.md)**
-
-Covers:
-- Step-by-step deployment instructions
-- Environment configuration
-- Troubleshooting common issues
-- Monitoring and maintenance
-- Security best practices
-- Advanced configuration options
-
----
-
-## Project Structure
-
-```
-AutoSpendTracker/
-├── src/
-│   └── autospendtracker/      # Main package
-│       ├── __init__.py        # Package initialization
-│       ├── ai.py              # AI model integration (Google Gen AI)
-│       ├── auth.py            # Authentication logic
-│       ├── mail.py            # Email processing
-│       ├── main.py            # Core application logic
-│       ├── models.py          # Data models
-│       ├── security.py        # Security utilities
-│       ├── sheets.py          # Google Sheets integration
-│       └── config/            # Configuration modules
-│           ├── __init__.py
-│           ├── app_config.py  # Application configuration
-│           └── logging_config.py  # Logging configuration
-├── tests/                     # Test modules
-├── docs/                      # Documentation
-├── images/                    # Images for documentation
-├── run_app.py                 # Application entry point
-├── pyproject.toml             # Project metadata and dependencies
-└── README.md                  # Documentation
-```
-
 ## Features
 
 - **Automatic Email Processing:** Scans your Gmail for transaction notifications
@@ -190,50 +98,6 @@ AutoSpendTracker/
 - **Robust Time Handling:** Correctly processes transactions at any time of day (including midnight)
 - **Configurable:** Easy to customize for different email formats, accounts, and time ranges
 
-## Recent Improvements
-
-### Latest Updates (November 2025)
-
-#### Phase 1: Modernization (Python 3.13 + Performance Monitoring)
-- **Python 3.13 Upgrade:** Leveraging latest features including JIT compiler (5-15% faster)
-- **Performance Monitoring:** Comprehensive metrics tracking with decorators for timing and cost analysis
-- **API Cost Tracking:** Real-time token usage and cost monitoring for Gemini API calls
-- **Metrics Dashboard:** Automatic performance and API metrics summary after each run
-
-#### Phase 2: Configuration & Type Safety
-- **Pydantic Settings v2:** Modern, type-safe configuration management with automatic validation
-- **Enhanced Type Checking:** Stricter mypy configuration for better code quality
-- **Environment Variables:** Seamless .env integration with type validation
-
-#### Phase 3: API Cost Control
-- **Rate Limiting:** Adaptive rate limiter with sliding window algorithm (60 calls/min default)
-- **Budget Tracking:** Daily cost budgets with configurable alerts (80% threshold)
-- **Throttling Stats:** Monitor API throttling events and wait times
-
-#### Previous Updates
-- **Weekly Filtering:** Configurable date-based filtering (default: last 7 days) prevents reprocessing all historical emails
-- **Progress Bar:** Visual feedback with tqdm showing real-time progress, count, and ETA
-- **Time Format Fix:** Corrected 12-hour time formatting to handle midnight transactions properly
-- **Performance:** 90% reduction in processing time and API costs for typical weekly runs
-- **Windows Compatibility:** Fixed logging issues on Windows (Git Bash/MINGW64)
-- **Auto OAuth Recovery:** Automatic token refresh error handling with seamless re-authentication
-
-### Core Features
-- **Python 3.13:** Latest Python with JIT compiler and performance improvements
-- **Performance Monitoring:** Track execution time, API calls, tokens, and costs
-- **Rate Limiting:** API cost control with adaptive throttling and budget tracking
-- **Pydantic Settings:** Type-safe configuration with validation
-- **Google Gen AI SDK:** Using the latest Gemini 3 Flash Preview model
-- **Modernized Project Structure:** Standard src layout and modular organization
-- **Dependency Management:** Using pyproject.toml with UV for faster dependency management
-- **Enhanced Logging:** Centralized logging configuration with file rotation and Unicode support
-- **Code Quality:** Strict type hints, documentation strings, and consistent formatting
-- **Robust Error Handling:** Comprehensive exception handling with detailed logging
-- **Production Ready:** Setup validation, diagnostic tools, and comprehensive documentation
-
-### Modernization Documentation
-For detailed information about the modernization improvements, see [MODERNIZATION.md](docs/MODERNIZATION.md)
-
 *How the output looks like*
 
 ![output](/images/Output.png)
@@ -241,12 +105,6 @@ For detailed information about the modernization improvements, see [MODERNIZATIO
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request or open an Issue.
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
 
 ## Contact
 
