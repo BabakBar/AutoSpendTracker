@@ -28,8 +28,8 @@ if __name__ == "__main__":
         # Provide more detailed error information
         logger.error(f"Error importing autospendtracker package: {e}")
         logger.error(
-            "Ensure the package is installed (e.g., 'uv pip install -e .') "
-            "and the 'src' directory is correctly structured."
+            "Ensure the package is installed (e.g., 'uv pip install -e .'), "
+            "and run via 'uv run autospendtracker' or an activated virtualenv."
         )
         sys.exit(1)
     except Exception as e:

@@ -7,6 +7,8 @@ import os
 import sys
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 
 def check_python_version():
     """Check Python version."""
@@ -16,11 +18,11 @@ def check_python_version():
     version = sys.version_info
     print(f"Python version: {version.major}.{version.minor}.{version.micro}")
 
-    if version.major == 3 and version.minor >= 11:
-        print("✓ Python version is compatible (3.11+)")
+    if version.major == 3 and version.minor >= 13:
+        print("✓ Python version is compatible (3.13+)")
         return True
     else:
-        print("✗ Python version must be 3.11 or higher")
+        print("✗ Python version must be 3.13 or higher")
         return False
 
 
@@ -64,6 +66,8 @@ def check_credentials():
     print("Checking Credential Files...")
     print("=" * 60)
 
+    load_dotenv()
+
     creds_ok = True
 
     # Check credentials.json (Gmail OAuth)
@@ -77,13 +81,16 @@ def check_credentials():
         creds_ok = False
 
     # Check ASTservice.json (Service Account)
-    service_creds = Path("ASTservice.json")
+    service_account_file = os.getenv("SERVICE_ACCOUNT_FILE", "ASTservice.json")
+    service_creds = Path(service_account_file)
     if service_creds.exists():
-        print("✓ ASTservice.json found (Service Account)")
+        print(f"✓ {service_account_file} found (Service Account)")
     else:
-        print("✗ ASTservice.json not found")
+        print(f"✗ {service_account_file} not found")
         print("  → Download from Google Cloud Console")
         print("  → Create Service Account with appropriate permissions")
+        if service_account_file.startswith("/app/"):
+            print("  → For local runs, set SERVICE_ACCOUNT_FILE=ASTservice.json in .env")
         creds_ok = False
 
     return creds_ok
@@ -199,7 +206,7 @@ def main():
         print("✓ All checks passed! You're ready to run the application.")
         print("\nNext steps:")
         print("  1. Verify GCP setup manually (see above)")
-        print("  2. Run: python run_app.py")
+        print("  2. Run: uv run autospendtracker")
     else:
         print(f"✗ {total - passed} check(s) failed. Please fix the issues above.")
         print("\nQuick fixes:")

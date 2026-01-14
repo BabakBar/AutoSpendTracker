@@ -27,6 +27,9 @@ dependencies = [
     # "perfmetrics~=3.1.0",  # Performance monitoring and metrics - commented out due to build issues
 ]
 
+[project.scripts]
+autospendtracker = "autospendtracker.main:main"
+
 [project.optional-dependencies]
 dev = [
     "ruff", # For linting and formatting
