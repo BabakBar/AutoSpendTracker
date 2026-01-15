@@ -5,7 +5,7 @@ This module contains Pydantic models for validating and processing data.
 
 from datetime import datetime
 import re
-from typing import Literal, Optional
+from typing import Literal, Optional, List
 
 try:
     from pydantic import BaseModel, Field, field_validator
@@ -65,20 +65,20 @@ class Transaction(BaseModel):
         """Convert currency code to uppercase."""
         return v.upper()
 
-    def to_sheet_row(self) -> list:
+    def to_sheet_row(self) -> List[str]:
         """Convert the transaction to a row format for Google Sheets.
         
         Returns:
             List of values in the order required for sheet rows
         """
         return [
-            self.date,
-            self.time,
-            self.merchant,
-            self.amount,
-            self.currency,
-            self.category,
-            self.account,
+            str(self.date),
+            str(self.time),
+            str(self.merchant),
+            str(self.amount),
+            str(self.currency),
+            str(self.category),
+            str(self.account),
         ]
     
     @classmethod

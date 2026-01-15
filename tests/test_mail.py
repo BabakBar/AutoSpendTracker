@@ -26,6 +26,7 @@ class TestMail(unittest.TestCase):
             ]
         }
         mock_service.users().messages().list().execute.return_value = mock_response
+        mock_service.users().messages().list_next.return_value = None
 
         # Call the function
         result = search_messages(mock_service)

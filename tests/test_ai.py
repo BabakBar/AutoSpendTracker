@@ -1,6 +1,7 @@
 """Tests for the ai module."""
 
 import unittest
+from types import SimpleNamespace
 from unittest.mock import patch, MagicMock, Mock
 import json
 
@@ -10,6 +11,7 @@ from autospendtracker.ai import (
     process_transaction,
     initialize_ai_model
 )
+from autospendtracker.models import Transaction
 from autospendtracker.exceptions import ConfigurationError
 
 
@@ -98,16 +100,15 @@ class TestAI(unittest.TestCase):
             "time": "12:34 PM",
             "account": "Wise"
         })
-        mock_prompt_vertex.return_value = mock_response
+        mock_prompt_vertex.return_value = SimpleNamespace(text=mock_response)
 
         # Call the function
         result = process_transaction(mock_client, transaction_info)
 
-        # Check that result is a list (sheet row)
-        self.assertIsInstance(result, list)
-        self.assertEqual(len(result), 7)
-        self.assertEqual(result[3], "45.67")  # amount
-        self.assertEqual(result[4], "EUR")    # currency
+        # Check that result is a Transaction
+        self.assertIsInstance(result, Transaction)
+        self.assertEqual(result.amount, "45.67")
+        self.assertEqual(result.currency, "EUR")
 
     @patch('autospendtracker.ai.prompt_vertex')
     def test_process_transaction_no_info(self, mock_prompt_vertex):
@@ -131,7 +132,7 @@ class TestAI(unittest.TestCase):
         }
 
         # Mock invalid JSON response
-        mock_prompt_vertex.return_value = "This is not valid JSON"
+        mock_prompt_vertex.return_value = SimpleNamespace(text="This is not valid JSON")
 
         result = process_transaction(mock_client, transaction_info)
 

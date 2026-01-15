@@ -14,7 +14,7 @@ import email.utils
 from bs4 import BeautifulSoup
 
 from autospendtracker.auth import gmail_authenticate
-from autospendtracker.config import CONFIG
+from autospendtracker.config import get_settings
 from autospendtracker.utils import retry_api_call
 
 # Set up logging (uses centralized configuration from logging_config)
@@ -101,14 +101,14 @@ def search_messages(service, user_id: str = 'me', days_back: Optional[int] = Non
     """
     # Get days_back from config if not provided
     if days_back is None:
-        days_back = int(CONFIG.get("EMAIL_DAYS_BACK", 7))
+        days_back = get_settings().email_days_back
 
     # Calculate the date to search from
     search_date = datetime.now() - timedelta(days=days_back)
     date_str = search_date.strftime('%Y/%m/%d')
 
     # Get label name from config
-    label_name = CONFIG.get("GMAIL_LABEL_NAME", "AutoSpendTracker/Processed")
+    label_name = get_settings().gmail_label_name
 
     # Build query with date filter and exclude processed emails
     query = (
@@ -232,13 +232,19 @@ def parse_email(service, user_id: str, msg_id: str) -> Dict[str, Optional[str]]:
                 ).strftime('%d-%m-%Y %I:%M %p')
 
         # Parse transaction details
-        wise_pattern = re.compile(r'You spent ([\d,\.]+) ([A-Z]{3}) at ([^.]+)')
+        wise_pattern = re.compile(r'You spent ([\d,\.]+) ([A-Z]{3}) at ([^.]+)', re.IGNORECASE)
         paypal_pattern = re.compile(
-            r'Sie haben ([\d,\.]+) ([A-Z]{3}) (?:an |to )([^.]+) gesendet'
+            r'Sie haben ([\d,\.]+) ([A-Z]{3}) (?:an |to )([^.]+) gesendet',
+            re.IGNORECASE
+        )
+        paypal_en_pattern = re.compile(
+            r'You (?:paid|sent) ([\d,\.]+) ([A-Z]{3}) (?:to|at) ([^.]+)',
+            re.IGNORECASE
         )
 
         wise_match = wise_pattern.search(text_content)
         paypal_match = paypal_pattern.search(text_content)
+        paypal_en_match = paypal_en_pattern.search(text_content)
 
         if wise_match:
             amount, currency, merchant = wise_match.groups()
@@ -248,6 +254,11 @@ def parse_email(service, user_id: str, msg_id: str) -> Dict[str, Optional[str]]:
         elif paypal_match:
             amount, currency, merchant = paypal_match.groups()
             # Convert German PayPal format to standard format
+            transaction_details['info'] = (
+                f"You spent {amount} {currency} at {merchant}."
+            )
+        elif paypal_en_match:
+            amount, currency, merchant = paypal_en_match.groups()
             transaction_details['info'] = (
                 f"You spent {amount} {currency} at {merchant}."
             )

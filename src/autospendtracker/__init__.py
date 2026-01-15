@@ -4,4 +4,9 @@ This package provides tools to automatically extract expense information
 from emails and process it using AI capabilities.
 """
 
-__version__ = "1.0.0"
+from importlib.metadata import PackageNotFoundError, version
+
+try:
+    __version__ = version("autospendtracker")
+except PackageNotFoundError:
+    __version__ = "2.1.0"

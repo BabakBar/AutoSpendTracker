@@ -3,6 +3,7 @@
 import unittest
 from unittest.mock import patch, MagicMock, mock_open
 import json
+import os
 import tempfile
 from pathlib import Path
 
@@ -40,7 +41,9 @@ class TestSheets(unittest.TestCase):
         mock_creds.assert_called_once()
 
         # Check that service was built
-        mock_build.assert_called_once_with('sheets', 'v4', credentials=mock_credentials)
+        mock_build.assert_called_once_with(
+            'sheets', 'v4', credentials=mock_credentials, cache_discovery=False
+        )
 
         # Check result
         self.assertEqual(result, mock_service)
@@ -80,8 +83,9 @@ class TestSheets(unittest.TestCase):
         """Test that append fails without spreadsheet ID."""
         values = [['01-05-2023', '12:34 PM', 'Coffee Shop', '45.67', 'EUR', 'Food & Dining', 'Wise']]
 
-        with self.assertRaises(ConfigurationError) as context:
-            append_to_sheet(values=values, spreadsheet_id=None)
+        with patch.dict(os.environ, {"SPREADSHEET_ID": ""}, clear=False):
+            with self.assertRaises(ConfigurationError) as context:
+                append_to_sheet(values=values, spreadsheet_id=None)
 
         self.assertIn("Spreadsheet ID", str(context.exception))
 

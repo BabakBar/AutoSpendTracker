@@ -13,7 +13,8 @@ from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 
-from autospendtracker.security import get_credential_path, secure_token_path
+from autospendtracker.config.settings import get_settings
+from autospendtracker.security import secure_token_path
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -45,7 +46,7 @@ def gmail_authenticate(
     
     # Use security module to get secure paths
     if credentials_path is None:
-        credentials_path = get_credential_path('credentials', 'credentials.json')
+        credentials_path = get_settings().gmail_credentials_file
     
     if token_path is None:
         token_path = secure_token_path('gmail-token.json')

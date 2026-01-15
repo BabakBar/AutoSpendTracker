@@ -8,23 +8,19 @@ version = "2.1.0"
 description = "Automated expense tracking using Gmail and Vertex AI."
 requires-python = ">=3.13"
 dependencies = [
-    # Use ~= for compatible release (allows patch updates only, not minor/major)
-    # This ensures reproducible builds while allowing security patches
     "google-auth-oauthlib~=1.2.0",
     "google-auth-httplib2~=0.2.0",
     "google-api-python-client~=2.147.0",
-    "google-cloud-aiplatform~=1.70.0",
     "google-genai~=1.14.0",  # Google Gen AI SDK
     "beautifulsoup4~=4.12.0",
     "python-dotenv~=1.0.0",
-    "requests~=2.32.0",
     "tenacity~=9.0.0",
     "tqdm~=4.66.0",  # Progress bar for email processing
     "pydantic~=2.10.0",  # Already in use, ensuring latest v2
     "pydantic-settings~=2.11.0",  # Modern config management
     "ratelimit~=2.2.0",  # API rate limiting
     "apprise~=1.9.0",  # Notification library for email/webhook alerts
-    # "perfmetrics~=3.1.0",  # Performance monitoring and metrics - commented out due to build issues
+    # "perfmetrics~=3.1.0",  # Performance monitoring and metrics
 ]
 
 [project.scripts]
@@ -32,9 +28,9 @@ autospendtracker = "autospendtracker.main:main"
 
 [project.optional-dependencies]
 dev = [
-    "ruff", # For linting and formatting
-    "mypy", # For type checking
-    "pytest", # For testing
+    "ruff",
+    "mypy",
+    "pytest",
 ]
 
 [tool.ruff]
@@ -49,7 +45,7 @@ quote-style = "double"
 known-first-party = ["autospendtracker"]
 
 [tool.mypy]
-python_version = "3.13" # Match your requires-python
+python_version = "3.13" # Match requires-python
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
@@ -66,3 +62,8 @@ ignore_missing_imports = true
 [[tool.mypy.overrides]]
 module = "tests.*"
 disallow_untyped_defs = false
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    "ignore::DeprecationWarning:httplib2\\.auth",
+]

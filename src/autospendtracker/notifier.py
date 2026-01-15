@@ -8,6 +8,7 @@ supporting multiple notification channels including email, webhooks, and more.
 import logging
 import os
 import traceback
+from urllib.parse import urlsplit
 from datetime import datetime
 from typing import Any, Optional
 
@@ -25,6 +26,16 @@ class NotificationError(Exception):
     """Raised when notification fails."""
 
     pass
+
+
+def _redact_webhook(webhook: str) -> str:
+    try:
+        parts = urlsplit(webhook)
+        if not parts.scheme or not parts.netloc:
+            return "<redacted>"
+        return f"{parts.scheme}://{parts.netloc}/..."
+    except Exception:
+        return "<redacted>"
 
 
 def is_notifications_enabled() -> bool:
@@ -87,7 +98,7 @@ def configure_apprise() -> Optional[Apprise]:
     if webhook:
         apobj.add(webhook)
         services_added += 1
-        logger.info(f"Webhook notification configured: {webhook}")
+        logger.info(f"Webhook notification configured: {_redact_webhook(webhook)}")
 
     if services_added == 0:
         logger.warning("No notification services configured")

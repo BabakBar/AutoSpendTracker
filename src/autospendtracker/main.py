@@ -8,6 +8,7 @@ import logging
 import os
 import time
 from pathlib import Path
+from dataclasses import dataclass
 from typing import Dict, List, Optional, Any
 
 from tqdm import tqdm
@@ -15,8 +16,9 @@ from tqdm import tqdm
 from autospendtracker.auth import gmail_authenticate
 from autospendtracker.mail import search_messages, parse_email, get_or_create_label, add_label_to_message
 from autospendtracker.ai import initialize_ai_model, process_transaction
+from autospendtracker.models import Transaction
 from autospendtracker.sheets import append_to_sheet, load_transaction_data
-from autospendtracker.config import setup_logging, get_config, CONFIG
+from autospendtracker.config import setup_logging, get_settings
 from autospendtracker.monitoring import track_performance, log_metrics_summary
 from autospendtracker.notifier import send_success_notification, send_failure_notification
 
@@ -25,6 +27,41 @@ logger = logging.getLogger(__name__)
 
 # Check for verbose logging mode
 VERBOSE_LOGGING = os.getenv('VERBOSE_LOGGING', '').lower() in ('true', '1', 'yes')
+
+
+@dataclass(frozen=True)
+class ServiceBundle:
+    ai_client: Any
+    gmail_service: Any
+    label_id: Optional[str]
+    label_name: str
+
+
+def build_services() -> ServiceBundle:
+    settings = get_settings()
+    client = initialize_ai_model(
+        project_id=settings.project_id,
+        location=settings.location,
+        model_name=settings.model_name
+    )
+
+    service = gmail_authenticate()
+
+    label_name = settings.gmail_label_name
+    label_id = get_or_create_label(service, label_name)
+
+    if not label_id:
+        logger.warning(f"Failed to get/create label '{label_name}' - emails won't be marked as processed")
+        logger.warning("This may result in duplicate processing on subsequent runs")
+    elif VERBOSE_LOGGING:
+        logger.info(f"Using Gmail label: {label_name} (ID: {label_id})")
+
+    return ServiceBundle(
+        ai_client=client,
+        gmail_service=service,
+        label_id=label_id,
+        label_name=label_name
+    )
 
 
 def save_transaction_data(data: List[List[str]], file_path: str = None) -> None:
@@ -36,7 +73,7 @@ def save_transaction_data(data: List[List[str]], file_path: str = None) -> None:
         file_path: Path to save the JSON file (default from config)
     """
     if file_path is None:
-        file_path = CONFIG.get("OUTPUT_FILE", "transaction_data.json")
+        file_path = get_settings().output_file
         
     try:
         with open(file_path, 'w') as f:
@@ -49,36 +86,19 @@ def save_transaction_data(data: List[List[str]], file_path: str = None) -> None:
 
 
 @track_performance
-def process_emails() -> List[List[str]]:
+def process_emails(services: Optional[ServiceBundle] = None) -> List[Transaction]:
     """
     Process emails to extract transaction information.
 
     Returns:
         List of processed transaction data rows
     """
-    # Initialize the AI client
-    client = initialize_ai_model(
-        project_id=CONFIG.get("PROJECT_ID"),
-        location=CONFIG.get("LOCATION"),
-        model_name=CONFIG.get("MODEL_NAME")
-    )
-
-    # Initialize Gmail service
-    service = gmail_authenticate()
-
-    # Initialize Gmail label for marking processed emails
-    label_name = CONFIG.get("GMAIL_LABEL_NAME", "AutoSpendTracker/Processed")
-    label_id = get_or_create_label(service, label_name)
-
-    if not label_id:
-        logger.warning(f"Failed to get/create label '{label_name}' - emails won't be marked as processed")
-        logger.warning("This may result in duplicate processing on subsequent runs")
-    elif VERBOSE_LOGGING:
-        logger.info(f"Using Gmail label: {label_name} (ID: {label_id})")
+    if services is None:
+        services = build_services()
 
     # Find transaction emails
-    sheet_data = []
-    messages = search_messages(service)
+    sheet_data: List[Transaction] = []
+    messages = search_messages(services.gmail_service)
 
     if not messages:
         logger.info("No transaction emails found")
@@ -87,23 +107,20 @@ def process_emails() -> List[List[str]]:
     # Process each message with progress bar
     logger.info(f"Processing {len(messages)} emails...")
     for msg in tqdm(messages, desc="Processing emails", unit="email"):
-        # CRITICAL: Label email FIRST to prevent duplicate processing if crash occurs
-        # This fixes the race condition where crashes before labeling cause duplicates
-        if label_id:
-            labeled = add_label_to_message(service, msg['id'], label_id)
-            if not labeled:
-                logger.warning(f"Skipping {msg['id']} - failed to label (won't process to avoid duplicates)")
-                continue
-            logger.debug(f"Labeled email {msg['id']} as processed")
-
-        # Now safe to process - email is already marked
-        transaction_info = parse_email(service, 'me', msg['id'])
-        logger.debug(f"Processing transaction: {transaction_info}")
+        # Process first; only mark as processed after a successful transaction
+        transaction_info = parse_email(services.gmail_service, 'me', msg['id'])
+        logger.debug(f"Processing transaction from message {msg['id']}")
 
         # Process through AI client
-        result = process_transaction(client, transaction_info)
+        result = process_transaction(services.ai_client, transaction_info)
         if result:
             sheet_data.append(result)
+            if services.label_id:
+                labeled = add_label_to_message(services.gmail_service, msg['id'], services.label_id)
+                if not labeled:
+                    logger.warning(f"Processed {msg['id']} but failed to label as processed")
+                else:
+                    logger.debug(f"Labeled email {msg['id']} as processed")
 
     return sheet_data
 
@@ -129,9 +146,9 @@ def run_pipeline(save_to_file: bool = True, upload_to_sheets: bool = True) -> Op
 
         # Process emails to extract transaction data
         logger.info("Step 1: Processing emails from Gmail...")
-        transaction_data = process_emails()
+        transactions = process_emails()
 
-        if not transaction_data:
+        if not transactions:
             logger.warning("No transactions were processed successfully")
             logger.info("Possible reasons:")
             logger.info("  - No transaction emails found in Gmail")
@@ -139,13 +156,15 @@ def run_pipeline(save_to_file: bool = True, upload_to_sheets: bool = True) -> Op
             logger.info("  - AI processing failed for all transactions")
             return None
 
-        logger.info(f"Successfully processed {len(transaction_data)} transactions")
+        logger.info(f"Successfully processed {len(transactions)} transactions")
+
+        sheet_rows = [transaction.to_sheet_row() for transaction in transactions]
 
         # Save data to file if requested
         if save_to_file:
             if VERBOSE_LOGGING:
                 logger.info("Step 2: Saving data to local file...")
-            save_transaction_data(transaction_data)
+            save_transaction_data(sheet_rows)
             if VERBOSE_LOGGING:
                 logger.info("✓ Data saved successfully")
             else:
@@ -155,22 +174,23 @@ def run_pipeline(save_to_file: bool = True, upload_to_sheets: bool = True) -> Op
         if upload_to_sheets:
             if VERBOSE_LOGGING:
                 logger.info("Step 3: Uploading data to Google Sheets...")
-            spreadsheet_id = CONFIG.get("SPREADSHEET_ID")
-            range_name = CONFIG.get("SHEET_RANGE", "Sheet1!A2:G")
-            append_to_sheet(transaction_data, spreadsheet_id, range_name)
+            settings = get_settings()
+            spreadsheet_id = settings.spreadsheet_id
+            range_name = settings.sheet_range
+            append_to_sheet(sheet_rows, spreadsheet_id, range_name)
             if VERBOSE_LOGGING:
                 logger.info("✓ Data uploaded to Google Sheets successfully")
             else:
                 logger.info("Step 3: ✓ Data uploaded to Google Sheets")
 
         # Use singular/plural correctly
-        txn_word = "transaction" if len(transaction_data) == 1 else "transactions"
-        logger.info(f"✓ Pipeline completed: {len(transaction_data)} {txn_word} processed")
+        txn_word = "transaction" if len(sheet_rows) == 1 else "transactions"
+        logger.info(f"✓ Pipeline completed: {len(sheet_rows)} {txn_word} processed")
 
         # Log performance and API metrics summary
         log_metrics_summary()
 
-        return transaction_data
+        return sheet_rows
 
     except Exception as e:
         logger.error("=" * 60)
@@ -191,7 +211,7 @@ def main() -> int:
         Exit code: 0 for success, 1 for failure
     """
     # Set up logging based on configured log level
-    log_level = CONFIG.get("LOG_LEVEL", "INFO")
+    log_level = get_settings().log_level
     setup_logging(level=getattr(logging, log_level))
 
     if VERBOSE_LOGGING:
@@ -199,9 +219,10 @@ def main() -> int:
 
     # Validate required configuration
     missing_config = []
-    if not CONFIG.get("PROJECT_ID"):
+    settings = get_settings()
+    if not settings.project_id:
         missing_config.append("PROJECT_ID")
-    if not CONFIG.get("SPREADSHEET_ID"):
+    if not settings.spreadsheet_id:
         missing_config.append("SPREADSHEET_ID")
 
     if missing_config:
@@ -232,8 +253,8 @@ def main() -> int:
         total_amount = 0.0
         for transaction_row in result:
             try:
-                # Amount is the first column in the row
-                amount_str = transaction_row[0] if len(transaction_row) > 0 else "0.00"
+                # Amount is the fourth column in the row
+                amount_str = transaction_row[3] if len(transaction_row) > 3 else "0.00"
                 total_amount += float(amount_str)
             except (ValueError, IndexError):
                 pass

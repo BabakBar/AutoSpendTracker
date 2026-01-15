@@ -21,8 +21,8 @@ class AppSettings(BaseSettings):
     """Application settings with type validation and environment variable support."""
 
     # Google Cloud settings
-    project_id: str = Field(
-        ...,
+    project_id: Optional[str] = Field(
+        default=None,
         description="Google Cloud project ID",
         validation_alias="PROJECT_ID"
     )
@@ -38,8 +38,8 @@ class AppSettings(BaseSettings):
     )
 
     # Google Sheets settings
-    spreadsheet_id: str = Field(
-        ...,
+    spreadsheet_id: Optional[str] = Field(
+        default=None,
         description="Google Sheets spreadsheet ID",
         validation_alias="SPREADSHEET_ID"
     )
@@ -64,6 +64,11 @@ class AppSettings(BaseSettings):
         default_factory=lambda: Path.home() / ".autospendtracker" / "secrets",
         description="Directory for storing OAuth tokens",
         validation_alias="TOKEN_DIR"
+    )
+    gmail_credentials_file: str = Field(
+        default="credentials.json",
+        description="Path to Gmail OAuth credentials JSON",
+        validation_alias="GMAIL_CREDENTIALS_FILE"
     )
 
     # Email filtering settings

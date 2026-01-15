@@ -7,7 +7,7 @@ import os
 import re
 import json
 import logging
-from typing import Dict, List, Optional, Any
+from typing import Dict, Optional, Any
 from datetime import datetime
 
 # Import the new Google Gen AI SDK
@@ -51,7 +51,7 @@ def initialize_ai_model(
     location: str = None,
     service_account_file: str = None,
     model_name: str = None
-) -> Any:
+) -> genai.Client:
     """
     Initialize the Google Gen AI client.
 
@@ -195,7 +195,11 @@ def clean_json_response(response: str) -> str:
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
 @rate_limit(max_calls=60, period=60, name="gemini-api")
 @track_api_call("gemini-generate-content")
-def prompt_vertex(client: Any, prompt_text: str, model_name: str = None) -> Optional[str]:
+def prompt_vertex(
+    client: genai.Client,
+    prompt_text: str,
+    model_name: str = None
+) -> Optional[types.GenerateContentResponse]:
     """
     Sends a prompt to the Google Gen AI model with retry logic.
 
@@ -205,7 +209,7 @@ def prompt_vertex(client: Any, prompt_text: str, model_name: str = None) -> Opti
         model_name: Name of the model to use (defaults to settings.model_name)
 
     Returns:
-        Model's response text or None if failed
+        Model response object or None if failed
     """
     # Resolve model_name from settings if not provided
     if model_name is None:
@@ -219,18 +223,23 @@ def prompt_vertex(client: Any, prompt_text: str, model_name: str = None) -> Opti
                 temperature=0.1,
                 max_output_tokens=8192,
                 top_p=1.0,
-                top_k=40
+                top_k=40,
+                response_mime_type="application/json"
             )
         )
         logger.debug("Received response from model")
-        return response.text if response.text else None
+        return response
     except Exception as e:
         logger.error(f"Error getting model response: {str(e)}")
         raise AIModelError(f"Failed to get model response: {str(e)}") from e
 
 
 @track_performance
-def process_transaction(client: Any, transaction_info: Dict[str, Any], model_name: str = None) -> Optional[List[str]]:
+def process_transaction(
+    client: genai.Client,
+    transaction_info: Dict[str, Optional[str]],
+    model_name: str = None
+) -> Optional[Transaction]:
     """
     Processes a single transaction through the AI model.
 
@@ -251,14 +260,18 @@ def process_transaction(client: Any, transaction_info: Dict[str, Any], model_nam
         
     prompt = create_prompt(transaction_info)
     model_response = prompt_vertex(client, prompt, model_name)
-    
-    if not model_response:
+
+    response_text = getattr(model_response, "text", None) if model_response else None
+    if not response_text:
         logger.error("Failed to get model response")
         return None
         
     try:
-        cleaned_response = clean_json_response(model_response)
-        raw_data = json.loads(cleaned_response)
+        try:
+            raw_data = json.loads(response_text)
+        except json.JSONDecodeError:
+            cleaned_response = clean_json_response(response_text)
+            raw_data = json.loads(cleaned_response)
         
         # Apply category hints if available
         merchant = raw_data.get('merchant', '')
@@ -270,19 +283,14 @@ def process_transaction(client: Any, transaction_info: Dict[str, Any], model_nam
         # Use Pydantic model for validation
         transaction = Transaction.from_dict(raw_data)
         
-        # Return the validated data as a list for sheets integration
-        return transaction.to_sheet_row()
+        # Return the validated Transaction for downstream formatting
+        return transaction
         
     except json.JSONDecodeError as e:
         logger.error(f"JSON decode error: {str(e)}")
-        logger.debug(f"Raw response: {model_response}")
-        logger.debug(f"Cleaned response: {cleaned_response}")
+        logger.debug("Model response parsing failed")
         return None
     except Exception as e:
         logger.error(f"Transaction validation error: {str(e)}")
-        # Log the raw data for debugging purposes
-        try:
-            logger.debug(f"Raw transaction data: {raw_data}")
-        except:
-            pass
+        logger.debug("Transaction validation failed")
         return None

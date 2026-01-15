@@ -5,7 +5,7 @@ This module handles the integration with Google Sheets for storing transaction d
 
 import json
 import os
-from typing import List, Any, Dict
+from typing import List, Dict, Any
 import logging
 
 from dotenv import load_dotenv
@@ -25,10 +25,6 @@ VERBOSE_LOGGING = os.getenv('VERBOSE_LOGGING', '').lower() in ('true', '1', 'yes
 
 # Load environment variables
 load_dotenv()
-
-# Default environment variables
-DEFAULT_SPREADSHEET_ID = os.getenv('SPREADSHEET_ID')
-DEFAULT_RANGE_NAME = os.getenv('SHEET_RANGE', 'Sheet1!A2:G')
 
 def create_sheets_service(service_account_file: str = None):
     """
@@ -64,9 +60,9 @@ def create_sheets_service(service_account_file: str = None):
 
 @retry_api_call
 def append_to_sheet(
-    values: List[List[Any]],
-    spreadsheet_id: str = DEFAULT_SPREADSHEET_ID,
-    range_name: str = DEFAULT_RANGE_NAME
+    values: List[List[str]],
+    spreadsheet_id: str = None,
+    range_name: str = None
 ) -> Dict[str, Any]:
     """
     Append values to a Google Sheet.
@@ -79,6 +75,11 @@ def append_to_sheet(
     Returns:
         Result of the append operation
     """
+    if spreadsheet_id is None:
+        spreadsheet_id = os.getenv('SPREADSHEET_ID')
+    if range_name is None:
+        range_name = os.getenv('SHEET_RANGE', 'Sheet1!A2:G')
+
     if not spreadsheet_id:
         raise ConfigurationError("Spreadsheet ID is missing. Set SPREADSHEET_ID environment variable.")
         
@@ -101,7 +102,7 @@ def append_to_sheet(
         raise SheetsError(f"Failed to append data to sheet: {e}") from e
 
 
-def load_transaction_data(file_path: str = 'transaction_data.json') -> List[List[Any]]:
+def load_transaction_data(file_path: str = 'transaction_data.json') -> List[List[str]]:
     """
     Load transaction data from a JSON file.
     

@@ -8,8 +8,10 @@ from unittest.mock import patch, MagicMock, mock_open
 import json
 import tempfile
 import os
+from types import SimpleNamespace
 
-from autospendtracker.main import run_pipeline, process_emails
+from autospendtracker.main import run_pipeline, process_emails, ServiceBundle
+from autospendtracker.models import Transaction
 
 
 class TestEndToEnd(unittest.TestCase):
@@ -20,33 +22,36 @@ class TestEndToEnd(unittest.TestCase):
     @patch('autospendtracker.main.process_transaction')
     @patch('autospendtracker.main.parse_email')
     @patch('autospendtracker.main.search_messages')
-    @patch('autospendtracker.main.gmail_authenticate')
-    @patch('autospendtracker.main.initialize_ai_model')
-    @patch('autospendtracker.main.CONFIG')
+    @patch('autospendtracker.main.build_services')
+    @patch('autospendtracker.main.get_settings')
     def test_complete_pipeline_success(
-        self, mock_config, mock_init_ai, mock_gmail_auth,
+        self, mock_get_settings, mock_build_services,
         mock_search, mock_parse, mock_process,
         mock_save, mock_append
     ):
         """Test the complete pipeline from email retrieval to Sheets upload."""
 
         # Setup configuration
-        mock_config.get.side_effect = lambda key, default=None: {
-            'PROJECT_ID': 'test-project',
-            'LOCATION': 'us-central1',
-            'MODEL_NAME': 'gemini-2.5-flash',
-            'SPREADSHEET_ID': 'test-spreadsheet-id',
-            'SHEET_RANGE': 'Sheet1!A2:G',
-            'OUTPUT_FILE': 'test_output.json'
-        }.get(key, default)
+        mock_get_settings.return_value = SimpleNamespace(
+            project_id='test-project',
+            location='us-central1',
+            model_name='gemini-2.5-flash',
+            spreadsheet_id='test-spreadsheet-id',
+            sheet_range='Sheet1!A2:G',
+            output_file='test_output.json',
+            log_level='INFO',
+            gmail_label_name='AutoSpendTracker/Processed'
+        )
 
-        # Mock AI client
+        # Mock services
         mock_ai_client = MagicMock()
-        mock_init_ai.return_value = mock_ai_client
-
-        # Mock Gmail service
         mock_gmail_service = MagicMock()
-        mock_gmail_auth.return_value = mock_gmail_service
+        mock_build_services.return_value = ServiceBundle(
+            ai_client=mock_ai_client,
+            gmail_service=mock_gmail_service,
+            label_id="label-id",
+            label_name="AutoSpendTracker/Processed"
+        )
 
         # Mock email messages found
         mock_search.return_value = [
@@ -76,9 +81,33 @@ class TestEndToEnd(unittest.TestCase):
 
         # Mock AI-processed transactions
         mock_process.side_effect = [
-            ['01-05-2023', '12:34 PM', 'Coffee Shop', '45.67', 'EUR', 'Food & Dining', 'Wise'],
-            ['02-05-2023', '3:45 PM', 'Grocery Store', '120.50', 'USD', 'Grocery', 'PayPal'],
-            ['03-05-2023', '8:20 AM', 'Taco Stand', '25.00', 'MXN', 'Food & Dining', 'Wise']
+            Transaction(
+                amount="45.67",
+                currency="EUR",
+                merchant="Coffee Shop",
+                category="Food & Dining",
+                date="01-05-2023",
+                time="12:34 PM",
+                account="Wise"
+            ),
+            Transaction(
+                amount="120.50",
+                currency="USD",
+                merchant="Grocery Store",
+                category="Grocery",
+                date="02-05-2023",
+                time="3:45 PM",
+                account="PayPal"
+            ),
+            Transaction(
+                amount="25.00",
+                currency="MXN",
+                merchant="Taco Stand",
+                category="Food & Dining",
+                date="03-05-2023",
+                time="8:20 AM",
+                account="Wise"
+            )
         ]
 
         # Mock successful save
@@ -94,15 +123,8 @@ class TestEndToEnd(unittest.TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(len(result), 3)
 
-        # Verify AI model was initialized
-        mock_init_ai.assert_called_once_with(
-            project_id='test-project',
-            location='us-central1',
-            model_name='gemini-2.5-flash'
-        )
-
-        # Verify Gmail authentication
-        mock_gmail_auth.assert_called_once()
+        # Verify services were built
+        mock_build_services.assert_called_once()
 
         # Verify email search
         mock_search.assert_called_once_with(mock_gmail_service)
@@ -131,26 +153,34 @@ class TestEndToEnd(unittest.TestCase):
         self.assertEqual(first_transaction[5], 'Food & Dining')  # category
 
     @patch('autospendtracker.main.search_messages')
-    @patch('autospendtracker.main.gmail_authenticate')
-    @patch('autospendtracker.main.initialize_ai_model')
-    @patch('autospendtracker.main.CONFIG')
+    @patch('autospendtracker.main.build_services')
+    @patch('autospendtracker.main.get_settings')
     def test_pipeline_with_no_emails_found(
-        self, mock_config, mock_init_ai, mock_gmail_auth, mock_search
+        self, mock_get_settings, mock_build_services, mock_search
     ):
         """Test pipeline behavior when no transaction emails are found."""
 
         # Setup configuration
-        mock_config.get.side_effect = lambda key, default=None: {
-            'PROJECT_ID': 'test-project',
-            'LOCATION': 'us-central1',
-            'MODEL_NAME': 'gemini-2.5-flash'
-        }.get(key, default)
+        mock_get_settings.return_value = SimpleNamespace(
+            project_id='test-project',
+            location='us-central1',
+            model_name='gemini-2.5-flash',
+            spreadsheet_id='test-spreadsheet-id',
+            sheet_range='Sheet1!A2:G',
+            output_file='test_output.json',
+            log_level='INFO',
+            gmail_label_name='AutoSpendTracker/Processed'
+        )
 
         # Mock services
         mock_ai_client = MagicMock()
-        mock_init_ai.return_value = mock_ai_client
         mock_gmail_service = MagicMock()
-        mock_gmail_auth.return_value = mock_gmail_service
+        mock_build_services.return_value = ServiceBundle(
+            ai_client=mock_ai_client,
+            gmail_service=mock_gmail_service,
+            label_id=None,
+            label_name="AutoSpendTracker/Processed"
+        )
 
         # Mock no emails found
         mock_search.return_value = []
@@ -162,34 +192,41 @@ class TestEndToEnd(unittest.TestCase):
         self.assertIsNone(result)
 
         # Verify services were still initialized
-        mock_init_ai.assert_called_once()
-        mock_gmail_auth.assert_called_once()
+        mock_build_services.assert_called_once()
         mock_search.assert_called_once()
 
     @patch('autospendtracker.main.process_transaction')
     @patch('autospendtracker.main.parse_email')
     @patch('autospendtracker.main.search_messages')
-    @patch('autospendtracker.main.gmail_authenticate')
-    @patch('autospendtracker.main.initialize_ai_model')
-    @patch('autospendtracker.main.CONFIG')
+    @patch('autospendtracker.main.build_services')
+    @patch('autospendtracker.main.get_settings')
     def test_pipeline_with_partial_failures(
-        self, mock_config, mock_init_ai, mock_gmail_auth,
+        self, mock_get_settings, mock_build_services,
         mock_search, mock_parse, mock_process
     ):
         """Test pipeline handles partial failures gracefully."""
 
         # Setup configuration
-        mock_config.get.side_effect = lambda key, default=None: {
-            'PROJECT_ID': 'test-project',
-            'LOCATION': 'us-central1',
-            'MODEL_NAME': 'gemini-2.5-flash'
-        }.get(key, default)
+        mock_get_settings.return_value = SimpleNamespace(
+            project_id='test-project',
+            location='us-central1',
+            model_name='gemini-2.5-flash',
+            spreadsheet_id='test-spreadsheet-id',
+            sheet_range='Sheet1!A2:G',
+            output_file='test_output.json',
+            log_level='INFO',
+            gmail_label_name='AutoSpendTracker/Processed'
+        )
 
         # Mock services
         mock_ai_client = MagicMock()
-        mock_init_ai.return_value = mock_ai_client
         mock_gmail_service = MagicMock()
-        mock_gmail_auth.return_value = mock_gmail_service
+        mock_build_services.return_value = ServiceBundle(
+            ai_client=mock_ai_client,
+            gmail_service=mock_gmail_service,
+            label_id=None,
+            label_name="AutoSpendTracker/Processed"
+        )
 
         # Mock 3 emails found
         mock_search.return_value = [
@@ -219,9 +256,25 @@ class TestEndToEnd(unittest.TestCase):
 
         # Mock AI processing - one succeeds, one returns None, one succeeds
         mock_process.side_effect = [
-            ['01-05-2023', '12:34 PM', 'Coffee Shop', '45.67', 'EUR', 'Food & Dining', 'Wise'],
+            Transaction(
+                amount="45.67",
+                currency="EUR",
+                merchant="Coffee Shop",
+                category="Food & Dining",
+                date="01-05-2023",
+                time="12:34 PM",
+                account="Wise"
+            ),
             None,  # Second transaction fails to process
-            ['03-05-2023', '8:20 AM', 'Taco Stand', '25.00', 'MXN', 'Food & Dining', 'Wise']
+            Transaction(
+                amount="25.00",
+                currency="MXN",
+                merchant="Taco Stand",
+                category="Food & Dining",
+                date="03-05-2023",
+                time="8:20 AM",
+                account="Wise"
+            )
         ]
 
         # Run pipeline
@@ -235,20 +288,25 @@ class TestEndToEnd(unittest.TestCase):
         self.assertEqual(mock_parse.call_count, 3)
         self.assertEqual(mock_process.call_count, 3)
 
-    @patch('autospendtracker.main.initialize_ai_model')
-    @patch('autospendtracker.main.CONFIG')
-    def test_pipeline_initialization_failure(self, mock_config, mock_init_ai):
+    @patch('autospendtracker.main.build_services')
+    @patch('autospendtracker.main.get_settings')
+    def test_pipeline_initialization_failure(self, mock_get_settings, mock_build_services):
         """Test pipeline handles initialization failures gracefully."""
 
         # Setup configuration
-        mock_config.get.side_effect = lambda key, default=None: {
-            'PROJECT_ID': 'test-project',
-            'LOCATION': 'us-central1',
-            'MODEL_NAME': 'gemini-2.5-flash'
-        }.get(key, default)
+        mock_get_settings.return_value = SimpleNamespace(
+            project_id='test-project',
+            location='us-central1',
+            model_name='gemini-2.5-flash',
+            spreadsheet_id='test-spreadsheet-id',
+            sheet_range='Sheet1!A2:G',
+            output_file='test_output.json',
+            log_level='INFO',
+            gmail_label_name='AutoSpendTracker/Processed'
+        )
 
-        # Mock AI initialization failure
-        mock_init_ai.side_effect = Exception("Failed to initialize AI model")
+        # Mock service initialization failure
+        mock_build_services.side_effect = Exception("Failed to initialize AI model")
 
         # Run pipeline
         result = run_pipeline()

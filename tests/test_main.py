@@ -9,8 +9,10 @@ from pathlib import Path
 from autospendtracker.main import (
     save_transaction_data,
     process_emails,
-    run_pipeline
+    run_pipeline,
+    ServiceBundle
 )
+from autospendtracker.models import Transaction
 
 
 class TestMain(unittest.TestCase):
@@ -44,18 +46,17 @@ class TestMain(unittest.TestCase):
     @patch('autospendtracker.main.process_transaction')
     @patch('autospendtracker.main.parse_email')
     @patch('autospendtracker.main.search_messages')
-    @patch('autospendtracker.main.gmail_authenticate')
-    @patch('autospendtracker.main.initialize_ai_model')
-    def test_process_emails_success(self, mock_init_ai, mock_gmail_auth,
-                                     mock_search, mock_parse, mock_process):
+    def test_process_emails_success(self, mock_search, mock_parse, mock_process):
         """Test successful email processing."""
-        # Mock AI client
+        # Mock services bundle
         mock_client = MagicMock()
-        mock_init_ai.return_value = mock_client
-
-        # Mock Gmail service
         mock_service = MagicMock()
-        mock_gmail_auth.return_value = mock_service
+        services = ServiceBundle(
+            ai_client=mock_client,
+            gmail_service=mock_service,
+            label_id="label-id",
+            label_name="AutoSpendTracker/Processed"
+        )
 
         # Mock found messages
         mock_search.return_value = [
@@ -71,16 +72,18 @@ class TestMain(unittest.TestCase):
         }
 
         # Mock processed transaction
-        mock_process.return_value = [
-            '01-05-2023', '12:34 PM', 'Coffee Shop', '45.67', 'EUR', 'Food & Dining', 'Wise'
-        ]
+        mock_process.return_value = Transaction(
+            amount="45.67",
+            currency="EUR",
+            merchant="Coffee Shop",
+            category="Food & Dining",
+            date="01-05-2023",
+            time="12:34 PM",
+            account="Wise"
+        )
 
         # Call the function
-        result = process_emails()
-
-        # Check that services were initialized
-        mock_init_ai.assert_called_once()
-        mock_gmail_auth.assert_called_once()
+        result = process_emails(services=services)
 
         # Check that messages were searched
         mock_search.assert_called_once_with(mock_service)
@@ -93,24 +96,25 @@ class TestMain(unittest.TestCase):
 
         # Check result
         self.assertEqual(len(result), 2)
+        self.assertIsInstance(result[0], Transaction)
 
     @patch('autospendtracker.main.search_messages')
-    @patch('autospendtracker.main.gmail_authenticate')
-    @patch('autospendtracker.main.initialize_ai_model')
-    def test_process_emails_no_messages(self, mock_init_ai, mock_gmail_auth, mock_search):
+    def test_process_emails_no_messages(self, mock_search):
         """Test processing when no emails are found."""
-        # Mock services
         mock_client = MagicMock()
-        mock_init_ai.return_value = mock_client
-
         mock_service = MagicMock()
-        mock_gmail_auth.return_value = mock_service
+        services = ServiceBundle(
+            ai_client=mock_client,
+            gmail_service=mock_service,
+            label_id=None,
+            label_name="AutoSpendTracker/Processed"
+        )
 
         # Mock no messages found
         mock_search.return_value = []
 
         # Call the function
-        result = process_emails()
+        result = process_emails(services=services)
 
         # Check result
         self.assertEqual(result, [])
@@ -121,10 +125,18 @@ class TestMain(unittest.TestCase):
     def test_run_pipeline_success(self, mock_process_emails, mock_save, mock_append):
         """Test successful pipeline run."""
         # Mock processed data
-        mock_data = [
-            ['01-05-2023', '12:34 PM', 'Coffee Shop', '45.67', 'EUR', 'Food & Dining', 'Wise']
+        mock_transactions = [
+            Transaction(
+                amount="45.67",
+                currency="EUR",
+                merchant="Coffee Shop",
+                category="Food & Dining",
+                date="01-05-2023",
+                time="12:34 PM",
+                account="Wise"
+            )
         ]
-        mock_process_emails.return_value = mock_data
+        mock_process_emails.return_value = mock_transactions
 
         # Call the function
         result = run_pipeline(save_to_file=True, upload_to_sheets=True)
@@ -133,13 +145,13 @@ class TestMain(unittest.TestCase):
         mock_process_emails.assert_called_once()
 
         # Check that data was saved
-        mock_save.assert_called_once_with(mock_data)
+        mock_save.assert_called_once()
 
         # Check that data was uploaded
         mock_append.assert_called_once()
 
         # Check result
-        self.assertEqual(result, mock_data)
+        self.assertEqual(len(result), 1)
 
     @patch('autospendtracker.main.process_emails')
     def test_run_pipeline_no_transactions(self, mock_process_emails):
